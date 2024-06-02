@@ -7,7 +7,7 @@ const getState = ({ getStore, getActions, setStore }) => {
 		actions: {
 			getname: async (name) => {
 				try {
-					const resp = await fetch(`${backend}addname`, {
+					const resp = await fetch(`${backend}api/addname`, {
 						method: "POST",
 						headers: {
 							"Content-Type": "application/json"

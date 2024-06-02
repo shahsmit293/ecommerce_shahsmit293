@@ -22,7 +22,7 @@ Migrate(app, db, compare_type=True)
 db.init_app(app)
 
 # Add all endpoints from the API with a "api" prefix
-app.register_blueprint(api)
+app.register_blueprint(api,url_prefix='/api')
 
 # This only runs if `$ python src/app.py` is executed
 if __name__ == '__main__':
