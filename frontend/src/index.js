@@ -2,16 +2,13 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './pages/App';
-import reportWebVitals from './reportWebVitals';
+import injectContext from './store/appContext'; // Import injectContext
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+const AppWithStore = injectContext(App); // Use injectContext to wrap App
+
 root.render(
   <React.StrictMode>
-    <App />
+    <AppWithStore /> {/* Render the wrapped App component */}
   </React.StrictMode>
 );
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
