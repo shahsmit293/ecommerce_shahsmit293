@@ -1,13 +1,21 @@
 FROM python:3.8-slim
 
-# Install PostgreSQL client
+# Install PostgreSQL client and other dependencies
 RUN apt-get update && apt-get install -y postgresql-client
 
+# Set working directory
 WORKDIR /app/backend
 
+# Copy requirements and install
 COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
+# Copy the rest of the application
 COPY . .
 
-CMD ["python", "app.py"]
+# Entry point script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Set the entry point
+ENTRYPOINT ["/entrypoint.sh"]
