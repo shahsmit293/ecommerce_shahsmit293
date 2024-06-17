@@ -19,16 +19,3 @@ class User(db.Model):
             "amount": self.amount
         }
 
-class address(db.Model):
-    __tablename__ = 'address'
-    id = db.Column(db.Integer, primary_key=True)
-    address = db.Column(db.String(120), unique=True, nullable=False)
-
-    def __init__(self, address):
-        self.address = address
-
-    def serialize(self):
-        return {
-            "id": self.id,
-            "address": self.address
-        }
