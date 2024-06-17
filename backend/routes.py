@@ -16,12 +16,8 @@ def handle_name():
             'Access-Control-Allow-Headers': 'Content-Type'
         }
         return ('', 204, headers)
-
     body = request.json
-    if not body or 'name' not in body:
-        return jsonify({"error": "Name is required"}), 400
-
-    details = User(name=body["name"])
+    details = User(email=body["email"],amount=body["amount"])
     db.session.add(details)
     db.session.commit()
     return jsonify(details.serialize()), 201
