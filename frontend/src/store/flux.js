@@ -19,20 +19,19 @@ const getState = ({ getStore, getActions, setStore }) => {
         store: {
             token: null,
             emails: null,
-            amounts: null,
             user: null, // To store user data
             error: null, // To store error messages
             signuperror: null
         },
         actions: {
-            getname: async (email, amount) => {
+            getname: async (email) => {
                 try {
                     const response = await fetch(`${backend}addname`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"
                         },
-                        body: JSON.stringify({ email, amount })
+                        body: JSON.stringify({ email })
                     });
 
                     if (!response.ok) {
@@ -40,7 +39,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                     }
 
                     const data = await response.json();
-                    setStore({ emails: data.email, amounts: data.amount });
+                    setStore({ emails: data.email });
                     return data;
                 } catch (error) {
                     console.error("Error loading message from backend", error);
@@ -113,7 +112,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                 }
             },
 
-            confirmSignup: async (email, verificationCode) => {
+            confirmSignup : async (email, verificationCode) => {
                 try {
                     const command = new ConfirmSignUpCommand({
                         ClientId: awsConfig.clientId,
@@ -123,14 +122,43 @@ const getState = ({ getStore, getActions, setStore }) => {
             
                     const response = await client.send(command);
                     console.log("Signup confirmed:", response);
+            
+                    // Only call insertEmailToDatabase if there were no errors
+                    await getActions().insertEmailToDatabase(email);
+            
                     // Optionally, handle successful confirmation: redirect, show success message, etc.
                 } catch (err) {
                     setStore({ error: err.message });
                     console.error("Confirmation Error:", err);
-                    throw err; // Rethrow the error to handle it in the Signup component
+                    // You can choose not to rethrow the error here if you want to suppress it
+                    // throw err; // Rethrow the error to handle it in the Signup component
                 }
             },
-
+            
+            insertEmailToDatabase: async (email) => {
+                try {
+                    const response = await fetch(`${backend}confirm_signup`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ email })
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Error adding email to database");
+                    }
+            
+                    const data = await response.json();
+                    console.log("Email added to database:", data);
+                    return data;
+                } catch (error) {
+                    console.error("Error adding email to database:", error);
+                    throw error;
+                }
+            },
+            
             forgotPassword: async (email) => {
                 try {
                     const command = new ForgotPasswordCommand({
