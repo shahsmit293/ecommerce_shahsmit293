@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { Context } from '../store/appContext';
+import { useNavigate } from 'react-router-dom';
 
 const PhoneCard = ({ phones }) => {
+    const {actions} = useContext(Context)
+    const navigate =useNavigate()
     return (
         <div className="row">
             {phones.map(phone => (
@@ -18,6 +22,7 @@ const PhoneCard = ({ phones }) => {
                             <p className="card-text"><strong>Location:</strong> {phone.location}</p>
                             <p className="card-text"><strong>IMEI:</strong> {phone.IMEI}</p>
                             <p className="card-text"><strong>User Email:</strong> {phone.user_email}</p>
+                            <button className="card-text" onClick={()=>{actions.get_each_phone(phone.id);navigate(`/viewphone/${phone.id}`)}}><strong>View</strong></button>
                         </div>
                     </div>
                 </div>

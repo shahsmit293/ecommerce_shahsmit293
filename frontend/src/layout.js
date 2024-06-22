@@ -7,6 +7,7 @@ import Signup from "./pages/signup";
 import SellIphone from "./pages/selliphone";
 import SellSamsung from "./pages/sellsamsung";
 import SellGoogle from "./pages/sellgoogle";
+import ViewEachPhone from "./pages/vieweachphone";
 import Navbar from "./components/navbar";
 const Layout = () => {
   return (
@@ -20,6 +21,7 @@ const Layout = () => {
         <Route path="/sell/iphone" element={<SellIphone />} />
         <Route path="/sell/samsung" element={<SellSamsung />} />
         <Route path="/sell/google" element={<SellGoogle />} />
+        <Route path="/viewphone/:seller_id" element={<ViewEachPhone />} />
       </Routes>
     </BrowserRouter>
   );

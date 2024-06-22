@@ -106,3 +106,17 @@ def get_phones():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@api.route('/phones/<int:sell_id>', methods=['GET'])
+@cross_origin()  # Allow CORS for this route
+def get_each_phone(sell_id):
+    try:
+        phones = Phones.query.filter_by(id=sell_id).all()
+        
+        # Serialize the list of phones to JSON
+        phones_list = [phone.serialize() for phone in phones]
+
+        return jsonify(phones_list), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

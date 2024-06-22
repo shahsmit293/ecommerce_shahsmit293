@@ -22,7 +22,8 @@ const getState = ({ getStore, getActions, setStore }) => {
             error: null, // To store error messages
             signuperror: null,
             addedphones:null,
-            phones: []
+            phones: [],
+            each_phone: null
         },
         actions: {
             login: async (username, password) => {
@@ -214,6 +215,30 @@ const getState = ({ getStore, getActions, setStore }) => {
 
                     const data = await response.json();
                     setStore({ phones: data });
+                    console.log("Fetched phones:", data);
+                    return data;
+                } catch (error) {
+                    console.error("Error fetching phones:", error);
+                    throw error;
+                }
+            },
+
+            get_each_phone: async (seller_id) => {
+                try {
+                    const response = await fetch(`${backend}phones/${seller_id}`, {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch phones");
+                    }
+
+                    const data = await response.json();
+                    setStore({ each_phone: data });
                     console.log("Fetched phones:", data);
                     return data;
                 } catch (error) {
