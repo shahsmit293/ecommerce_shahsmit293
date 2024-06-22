@@ -18,33 +18,13 @@ const getState = ({ getStore, getActions, setStore }) => {
     return {
         store: {
             token: null,
-            emails: null,
             user: null, // To store user data
             error: null, // To store error messages
-            signuperror: null
+            signuperror: null,
+            addedphones:null,
+            phones: []
         },
         actions: {
-            getname: async (email) => {
-                try {
-                    const response = await fetch(`${backend}addname`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({ email })
-                    });
-
-                    if (!response.ok) {
-                        throw new Error("Network response was not ok");
-                    }
-
-                    const data = await response.json();
-                    setStore({ emails: data.email });
-                    return data;
-                } catch (error) {
-                    console.error("Error loading message from backend", error);
-                }
-            },
             login: async (username, password) => {
                 try {
                     const command = new InitiateAuthCommand({
@@ -190,6 +170,55 @@ const getState = ({ getStore, getActions, setStore }) => {
                 } catch (err) {
                     setStore({ error: err.message });
                     console.error("Password Reset Error:", err);
+                }
+            },
+
+            addPhone: async (phoneDetails) => {
+                try {
+                    const response = await fetch(`${backend}add_phone`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(phoneDetails)
+                    });
+        
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to add phone");
+                    }
+        
+                    const data = await response.json();
+                    console.log("Phone added successfully:", data);
+                    setStore({ addedphones: data});
+                    return data;
+                } catch (error) {
+                    console.error("Error adding phone:", error);
+                    throw error;
+                }
+            },
+            
+            getPhones: async () => {
+                try {
+                    const response = await fetch(`${backend}phones`, {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch phones");
+                    }
+
+                    const data = await response.json();
+                    setStore({ phones: data });
+                    console.log("Fetched phones:", data);
+                    return data;
+                } catch (error) {
+                    console.error("Error fetching phones:", error);
+                    throw error;
                 }
             }
         }

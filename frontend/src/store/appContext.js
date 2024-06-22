@@ -35,8 +35,9 @@ const injectContext = PassedComponent => {
                 }).catch(error => {
                     console.error("Error fetching user data:", error);
                 });
-            }
-        }, [state.actions]); // <-- Include state.actions in the dependency array
+            };            
+            state.actions.getPhones();
+        }, []); // <-- Include state.actions in the dependency array
 
         return (
             <Context.Provider value={state}>

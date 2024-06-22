@@ -1,7 +1,9 @@
 import React, { useState, useContext } from 'react';
 import { Context } from '../store/appContext';
+import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
+    const navigate = useNavigate();
     const { store, actions } = useContext(Context);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -12,10 +14,21 @@ const Login = () => {
     const [passwordMatchError, setPasswordMatchError] = useState('');
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [showResetPassword, setShowResetPassword] = useState(false);
+    const [loginError, setLoginError] = useState(null); // State for login error
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        actions.login(username, password);
+        await actions.login(username, password);
+        if (store.error) {
+            // Store the error message
+            setLoginError(store.error);
+            // Reload the page on error
+            window.location.reload();
+        } else {
+            // Clear error and navigate upon successful login
+            setLoginError(null);
+            navigate('/');
+        }
     };
 
     const handleForgotPasswordSubmit = async (e) => {
@@ -35,21 +48,26 @@ const Login = () => {
         setShowResetPassword(false);
     };
 
+    const handleInputChange = () => {
+        // Clear login error message on input change
+        setLoginError(null);
+    };
+
     return (
         <div>
             <h2>Login</h2>
             <form onSubmit={handleSubmit}>
                 <label>
                     Username:
-                    <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} />
+                    <input type="text" value={username} onChange={(e) => { setUsername(e.target.value); handleInputChange(); }} />
                 </label>
                 <label>
                     Password:
-                    <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                    <input type="password" value={password} onChange={(e) => { setPassword(e.target.value); handleInputChange(); }} />
                 </label>
                 <button type="submit">Login</button>
             </form>
-            {store.error && <p style={{ color: 'red' }}>{store.error}</p>}
+            {loginError && <p style={{ color: 'red' }}>{loginError}</p>} {/* Display login error */}
             <button onClick={() => setShowForgotPassword(true)}>Forgot Password?</button>
 
             {showForgotPassword && (
