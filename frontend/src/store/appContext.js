@@ -37,6 +37,7 @@ const injectContext = PassedComponent => {
                 });
             };            
             state.actions.getPhones();
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []); // <-- Include state.actions in the dependency array
 
         return (

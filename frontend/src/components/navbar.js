@@ -17,7 +17,7 @@ const Navbar = () => {
   return (
     <nav className="navbar navbar-expand-lg bg-body-tertiary">
       <div className="container-fluid">
-        <a className="navbar-brand" href="#">Navbar</a>
+        <button className="navbar-brand" onClick={() => navigate('/')} >Navbar</button>
         <button
           className="navbar-toggler"
           type="button"
@@ -50,16 +50,15 @@ const Navbar = () => {
                   <button className="nav-link" onClick={handleLogout}>Logout</button>
                 </li>
                 <li className="nav-item dropdown">
-                  <a
+                  <h4
                     className="nav-link dropdown-toggle"
-                    href="#"
                     id="navbarDropdown"
                     role="button"
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
                   >
                     Sell
-                  </a>
+                  </h4>
                   <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
                     <li>
                       <button className="dropdown-item" onClick={() => navigate('/sell/iphone')}>iPhone</button>

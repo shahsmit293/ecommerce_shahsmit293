@@ -15,6 +15,7 @@ const ViewEachPhone = () => {
         };
 
         fetchPhone();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [seller_id]);
 
     if (loading) {

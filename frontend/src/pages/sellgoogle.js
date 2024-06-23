@@ -74,7 +74,7 @@ const states = [
 
 const SellGoogle = () => {
   const navigate=useNavigate()
-  const {store,actions}=useContext(Context)
+  const {store}=useContext(Context)
   const [selectedPhone, setSelectedPhone] = useState(null);
   const [color, setColor] = useState('');
   const [storage, setStorage] = useState('');
