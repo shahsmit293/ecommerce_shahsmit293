@@ -2,15 +2,30 @@ from flask import Flask, request, jsonify, Blueprint
 from flask_cors import CORS, cross_origin
 from models import db, User, Phones  # Adjust as per your project structure
 import boto3
-from awsConfig import aws_config
 from functools import wraps
+import os
+from uuid import uuid4
+from werkzeug.utils import secure_filename
+import json
+from uuid import uuid4
+from dotenv import load_dotenv
 
 api = Blueprint('api', __name__)
 
+s3_bucket_name=os.getenv("s3_bucket_name")
+aws_access_key=os.getenv("aws_access_key")
+aws_secret_key=os.getenv("aws_secret_key")
+region=os.getenv("region")
+session = boto3.Session(
+                aws_access_key_id=os.getenv("aws_access_key"),
+                aws_secret_access_key=os.getenv("aws_secret_key"),
+                region_name=os.getenv("region")
+            )
+s3 = session.client('s3')
 # Allow CORS requests to this API Blueprint
 CORS(api, supports_credentials=True, origins='*')  # Adjust origins as needed
 
-cognito_client = boto3.client('cognito-idp', region_name=aws_config["region"])
+cognito_client = boto3.client('cognito-idp', region_name=os.getenv("region"))
 
 # Wrapper function to check for access token
 def require_token(func):
@@ -49,51 +64,64 @@ def confirm_signup():
         return jsonify({"error": str(e)}), 500
 
 @api.route('/add_phone', methods=['POST', 'OPTIONS'])
-@cross_origin()  # Allow CORS for this route
+@cross_origin()
 def add_phone():
-    if request.method == 'OPTIONS':
-        headers = {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            'Access-Control-Allow-Credentials': 'true'
-        }
-        return ('', 200, headers)  # Return HTTP OK status for OPTIONS request
-    
     try:
-        body = request.json
-        price = body.get('price')
-        phonetype = body.get('phonetype')
-        color = body.get('color')
-        storage = body.get('storage')
-        carrier = body.get('carrier')
-        model = body.get('model')
-        condition = body.get('condition')
-        seller = body.get('seller')
-        location = body.get('location')
-        IMEI = body.get('IMEI')
-        user_email = body.get('user_email')
+        body = request.form.get('phoneDetails')
+        phoneDetails = json.loads(body)
+        
+        # Ensure user exists
+        user_email = phoneDetails.get('user_email')
+        user = User.query.filter_by(email=user_email).first()
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        
+        # Get the last ID from Phones table
+        last_phone = Phones.query.order_by(Phones.id.desc()).first()
+        next_id = last_phone.id + 1 if last_phone else 1
 
-        # Validate required inputs
-        if not (price and phonetype and color and model and condition and seller and location and user_email):
-            return jsonify({"error": "Missing required fields"}), 400
+        # Handle file uploads to S3 and store URLs in database
+        folder_name = f"{user.id}_{secure_filename(user_email)}_sellerID_{next_id}"
+        uploaded_files = []
+        for file in request.files.getlist('images'):
+            filename = secure_filename(file.filename)
+            file_key = os.path.join(folder_name, filename)
 
-        # Create a new Phones object
-        new_phone = Phones(price=price, phonetype=phonetype, color=color, storage=storage, carrier=carrier,
-                           model=model, condition=condition, seller=seller, location=location,
-                           IMEI=IMEI, user_email=user_email)
+            # Upload file to S3
+            s3.upload_fileobj(file, os.getenv("s3_bucket_name"), file_key, ExtraArgs={'ContentType': file.content_type})
 
-        # Add to session and commit
+            # Form the URL for the uploaded file
+            file_url = f"https://{s3_bucket_name}.s3.{region}.amazonaws.com/{file_key}"
+            uploaded_files.append(file_url)
+        
+        # Create new Phone instance and commit to database
+        new_phone = Phones(
+            price=phoneDetails['price'],
+            phonetype=phoneDetails['phonetype'],
+            color=phoneDetails['color'],
+            storage=phoneDetails['storage'],
+            carrier=phoneDetails['carrier'],
+            model=phoneDetails['model'],
+            condition=phoneDetails['condition'],
+            seller=phoneDetails['seller'],
+            location=phoneDetails['location'],
+            IMEI=phoneDetails['IMEI'],
+            user_email=user_email,
+            image_url=uploaded_files  # List of URLs for uploaded images
+        )
+
         db.session.add(new_phone)
         db.session.commit()
 
-        return jsonify(new_phone.serialize()), 201
+        return jsonify({"message": "Phone added successfully", "phone": new_phone.serialize()}), 201
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(e)
+        return jsonify({"error": "Failed to add phone"}), 500
 
+    
 @api.route('/phones', methods=['GET'])
-@cross_origin()  # Allow CORS for this route
+@cross_origin() 
 def get_phones():
     try:
         # Query all phones from the database
@@ -108,10 +136,10 @@ def get_phones():
         return jsonify({"error": str(e)}), 500
 
 @api.route('/phones/<int:sell_id>', methods=['GET'])
-@cross_origin()  # Allow CORS for this route
+@cross_origin() 
 def get_each_phone(sell_id):
     try:
-        phones = Phones.query.filter_by(id=sell_id).all()
+        phones = Phones.query.filter_by(id=sell_id)
         
         # Serialize the list of phones to JSON
         phones_list = [phone.serialize() for phone in phones]
@@ -120,3 +148,5 @@ def get_each_phone(sell_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+

@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Context } from '../store/appContext';
 import { useNavigate } from 'react-router-dom';
@@ -125,6 +125,10 @@ const SellIphone = () => {
   const [location, setLocation] = useState('');
   const [price,setPrice] = useState('')
   const [IMEI,setIMEI] = useState('')
+  const [images, setImages] = useState([]);
+  const [error, setError] = useState('');
+
+  const fileInputRef = useRef(null)
 
   const handlePhoneSelection = (phone) => {
     setSelectedPhone(phone);
@@ -136,32 +140,74 @@ const SellIphone = () => {
     setSeller('');
     setLocation('');
     setPrice('');
-    setIMEI('')
+    setIMEI('');
+    setImages([]);
+    setError('')
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    const validFiles = [];
+    const invalidFiles = [];
+
+    files.forEach((file) => {
+      if (file.type === 'image/jpeg' || file.type === 'image/png') {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(file.name);
+      }
+    });
+
+    // Disable file input if there are already 5 files uploaded
+    if (images.length + validFiles.length >= 5) {
+      fileInputRef.current.disabled = true;
+    }
+
+    if (invalidFiles.length > 0) {
+      setError(`Invalid file types: ${invalidFiles.join(', ')}`);
+    } else {
+      setError('');
+    }
+
+    setImages((prevImages) => [...prevImages, ...validFiles]);
+    e.target.value = null; // Clear the file input value
+  };
+
+  const handleRemoveImage = (index) => {
+    setImages((prevImages) => {
+      const updatedImages = prevImages.filter((_, i) => i !== index);
+      // Enable file input when removing images if total is less than 5
+      if (updatedImages.length < 5) {
+        fileInputRef.current.disabled = false;
+      }
+      return updatedImages;
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const phoneDetails = {
-      price: price,
-      phonetype: selectedPhone,
-      color: color,
-      storage: storage,
-      carrier: carrier,
-      model: modelNumber,
-      condition: condition,
-      seller: seller,
-      location: location,
-      IMEI: IMEI,
-      user_email: store.user.email
+        price: price,
+        phonetype: selectedPhone,
+        color: color,
+        storage: storage,
+        carrier: carrier,
+        model: modelNumber,
+        condition: condition,
+        seller: seller,
+        location: location,
+        IMEI: IMEI,
+        user_email: store.user.email
     };
 
     try {
-        const result = await actions.addPhone(phoneDetails);
+        const result = await actions.addPhone(phoneDetails, images);
         console.log("Phone added:", result);
     } catch (error) {
         console.error("Error adding phone:", error);
     }
 };
+
   const renderPhoneCards = () => {
     return Object.keys(phoneData).map(phone => (
       <div key={phone} className="card mb-2" onClick={() => handlePhoneSelection(phone)} style={{ cursor: 'pointer' }}>
@@ -252,6 +298,31 @@ const SellIphone = () => {
             {states.map(state => <option key={state} value={state}>{state}</option>)}
           </select>
         </div>
+
+        <div className="mb-3">
+          <label htmlFor="images" className="form-label">Upload Images</label>
+          <input
+            type="file"
+            id="images"
+            className="form-control"
+            multiple
+            accept=".jpeg,.jpg,.png"
+            onChange={handleFileChange}
+            disabled={images.length >= 5}
+            ref={fileInputRef}  // Attach the ref to the input element
+          />
+          <p>Only 5 Images Allow To Upload</p>
+          {error && <div className="alert alert-danger mt-2">{error}</div>}
+          <div className="mt-2">
+            {images.map((image, index) => (
+              <div key={index} className="d-flex justify-content-between align-items-center">
+                <span>{image.name}</span>
+                <button type="button" className="btn btn-danger btn-sm" onClick={() => handleRemoveImage(index)}>Delete</button>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <button type="submit" className="btn btn-primary">Sell Phone</button>
       </form>
     );

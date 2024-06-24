@@ -7,21 +7,22 @@ import {
     ForgotPasswordCommand, 
     ConfirmForgotPasswordCommand 
 } from "@aws-sdk/client-cognito-identity-provider";
-import awsConfig from './awsConfig';
 import Cookies from 'js-cookie';
 
-const client = new CognitoIdentityProviderClient({ region: awsConfig.region });
+// Initialize Cognito client with environment variable
+const client = new CognitoIdentityProviderClient({ region: process.env.REACT_APP_AWS_REGION });
 
 const getState = ({ getStore, getActions, setStore }) => {
     let backend = process.env.REACT_APP_FLASK_BACKEND_URL;
+    let clientId = process.env.REACT_APP_AWS_COGNITO_CLIENT_ID;
 
     return {
         store: {
             token: null,
-            user: null, // To store user data
-            error: null, // To store error messages
+            user: null,
+            error: null,
             signuperror: null,
-            addedphones:null,
+            addedphones: null,
             phones: [],
             each_phone: null
         },
@@ -30,7 +31,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                 try {
                     const command = new InitiateAuthCommand({
                         AuthFlow: "USER_PASSWORD_AUTH",
-                        ClientId: awsConfig.clientId,
+                        ClientId: clientId,
                         AuthParameters: {
                             USERNAME: username,
                             PASSWORD: password,
@@ -42,7 +43,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                     const user = await getActions().getUserAttributes(accessToken);
 
                     // Store token in cookies
-                    Cookies.set("accessToken", accessToken, { expires: 1 }); // Expires in 1 day
+                    Cookies.set("accessToken", accessToken, { expires: 1 });
                     setStore({ user: user, token: accessToken });
                 } catch (err) {
                     setStore({ error: err.message });
@@ -76,14 +77,14 @@ const getState = ({ getStore, getActions, setStore }) => {
             signup: async (email, password) => {
                 try {
                     const command = new SignUpCommand({
-                        ClientId: awsConfig.clientId,
-                        Username: email,  // Use email as username
+                        ClientId: clientId,
+                        Username: email,
                         Password: password,
                         UserAttributes: [
                             { Name: 'email', Value: email }
                         ]
                     });
-            
+
                     const response = await client.send(command);
                     console.log("Signup Successful:", response);
                     // Optionally, handle success: navigate to another page, show a success message, etc.
@@ -93,29 +94,27 @@ const getState = ({ getStore, getActions, setStore }) => {
                 }
             },
 
-            confirmSignup : async (email, verificationCode) => {
+            confirmSignup: async (email, verificationCode) => {
                 try {
                     const command = new ConfirmSignUpCommand({
-                        ClientId: awsConfig.clientId,
+                        ClientId: clientId,
                         Username: email,
                         ConfirmationCode: verificationCode,
                     });
-            
+
                     const response = await client.send(command);
                     console.log("Signup confirmed:", response);
-            
+
                     // Only call insertEmailToDatabase if there were no errors
                     await getActions().insertEmailToDatabase(email);
-            
+
                     // Optionally, handle successful confirmation: redirect, show success message, etc.
                 } catch (err) {
                     setStore({ error: err.message });
                     console.error("Confirmation Error:", err);
-                    // You can choose not to rethrow the error here if you want to suppress it
-                    // throw err; // Rethrow the error to handle it in the Signup component
                 }
             },
-            
+
             insertEmailToDatabase: async (email) => {
                 try {
                     const response = await fetch(`${backend}confirm_signup`, {
@@ -125,12 +124,12 @@ const getState = ({ getStore, getActions, setStore }) => {
                         },
                         body: JSON.stringify({ email })
                     });
-            
+
                     if (!response.ok) {
                         const errorData = await response.json();
                         throw new Error(errorData.error || "Error adding email to database");
                     }
-            
+
                     const data = await response.json();
                     console.log("Email added to database:", data);
                     return data;
@@ -139,14 +138,14 @@ const getState = ({ getStore, getActions, setStore }) => {
                     throw error;
                 }
             },
-            
+
             forgotPassword: async (email) => {
                 try {
                     const command = new ForgotPasswordCommand({
-                        ClientId: awsConfig.clientId,
+                        ClientId: clientId,
                         Username: email,
                     });
-            
+
                     const response = await client.send(command);
                     console.log("Forgot Password Initiated:", response);
                     // Optionally, handle success: navigate to another page, show a success message, etc.
@@ -155,16 +154,16 @@ const getState = ({ getStore, getActions, setStore }) => {
                     console.error("Forgot Password Error:", err);
                 }
             },
-            
+
             confirmForgotPassword: async (email, verificationCode, newPassword) => {
                 try {
                     const command = new ConfirmForgotPasswordCommand({
-                        ClientId: awsConfig.clientId,
+                        ClientId: clientId,
                         Username: email,
                         ConfirmationCode: verificationCode,
                         Password: newPassword,
                     });
-            
+
                     const response = await client.send(command);
                     console.log("Password Reset Successful:", response);
                     // Optionally, handle success: navigate to another page, show a success message, etc.
@@ -174,31 +173,35 @@ const getState = ({ getStore, getActions, setStore }) => {
                 }
             },
 
-            addPhone: async (phoneDetails) => {
+            addPhone: async (phoneDetails, images) => {
                 try {
-                    const response = await fetch(`${backend}add_phone`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify(phoneDetails)
+                    const formData = new FormData();
+                    formData.append('phoneDetails', JSON.stringify(phoneDetails));
+
+                    images.forEach((image) => {
+                        formData.append('images', image);
                     });
-        
+
+                    const response = await fetch(`${backend}add_phone`, {
+                        method: 'POST',
+                        body: formData,
+                    });
+
                     if (!response.ok) {
                         const errorData = await response.json();
-                        throw new Error(errorData.error || "Failed to add phone");
+                        throw new Error(errorData.error || 'Failed to add phone');
                     }
-        
+
                     const data = await response.json();
-                    console.log("Phone added successfully:", data);
-                    setStore({ addedphones: data});
+                    console.log('Phone added successfully:', data);
+                    setStore({ addedphones: data });
                     return data;
                 } catch (error) {
-                    console.error("Error adding phone:", error);
+                    console.error('Error adding phone:', error);
                     throw error;
                 }
             },
-            
+
             getPhones: async () => {
                 try {
                     const response = await fetch(`${backend}phones`, {

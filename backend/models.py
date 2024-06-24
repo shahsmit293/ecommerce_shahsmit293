@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-
+from sqlalchemy.dialects.postgresql import ARRAY
 db = SQLAlchemy()
 
 class User(db.Model):
@@ -30,10 +30,10 @@ class Phones(db.Model):
     location = db.Column(db.String(120), nullable=True)
     IMEI = db.Column(db.Integer, nullable=True)
     user_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=True)  # Update foreign key to reference email
-
+    image_url = db.Column(ARRAY(db.String), nullable=True) 
     user = db.relationship('User', backref=db.backref('phones', lazy=True))
 
-    def __init__(self, price,phonetype, color, storage, carrier, model, condition, seller, location,IMEI, user_email):
+    def __init__(self, price,phonetype, color, storage, carrier, model, condition, seller, location,IMEI, user_email,image_url):
         self.price = price
         self.phonetype=phonetype
         self.color = color
@@ -45,6 +45,7 @@ class Phones(db.Model):
         self.location = location
         self.IMEI=IMEI
         self.user_email = user_email
+        self.image_url=image_url
 
     def serialize(self):
         return {
@@ -60,4 +61,5 @@ class Phones(db.Model):
             "location": self.location,
             'IMEI':self.IMEI,
             "user_email": self.user_email,
+            "image_url":self.image_url
         }
