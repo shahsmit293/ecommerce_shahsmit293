@@ -10,6 +10,7 @@ psycopg2 = "*"
 python-dotenv = "*"
 flask-cors = "*"
 flask-migrate = "*"
+stream-chat = "*"
 
 [dev-packages]
 

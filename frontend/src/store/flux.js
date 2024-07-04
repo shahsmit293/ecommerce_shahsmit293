@@ -8,13 +8,14 @@ import {
     ConfirmForgotPasswordCommand 
 } from "@aws-sdk/client-cognito-identity-provider";
 import Cookies from 'js-cookie';
-
+import { StreamChat } from 'stream-chat';
 // Initialize Cognito client with environment variable
 const client = new CognitoIdentityProviderClient({ region: process.env.REACT_APP_AWS_REGION });
 
 const getState = ({ getStore, getActions, setStore }) => {
     let backend = process.env.REACT_APP_FLASK_BACKEND_URL;
     let clientId = process.env.REACT_APP_AWS_COGNITO_CLIENT_ID;
+    const apiKey = process.env.REACT_APP_STREAM_API_KEY;
 
     return {
         store: {
@@ -24,32 +25,47 @@ const getState = ({ getStore, getActions, setStore }) => {
             signuperror: null,
             addedphones: null,
             phones: [],
-            each_phone: null
+            each_phone: null,
+            streamToken: null,
+            chatClient: null,
+            activeuserid: null,
+            channelId:null,
+            channelslist: null,
+            channel: null
         },
         actions: {
-            login: async (username, password) => {
+            login: async (useremail, password) => {
                 try {
                     const command = new InitiateAuthCommand({
                         AuthFlow: "USER_PASSWORD_AUTH",
                         ClientId: clientId,
                         AuthParameters: {
-                            USERNAME: username,
+                            USERNAME: useremail,
                             PASSWORD: password,
                         },
                     });
 
                     const response = await client.send(command);
                     const accessToken = response.AuthenticationResult.AccessToken;
-                    const user = await getActions().getUserAttributes(accessToken);
 
-                    // Store token in cookies
                     Cookies.set("accessToken", accessToken, { expires: 1 });
-                    setStore({ user: user, token: accessToken });
+                    setStore({ token: accessToken });
+
+                    const user = await getActions().getUserAttributes(accessToken);
+                    setStore({ user });
+
+                    const userid = await getActions().getUserIdByEmail(useremail);
+
+                    await getActions().getStreamToken(userid);
+                    await getActions().getChannels(userid)
+
                 } catch (err) {
                     setStore({ error: err.message });
                     console.error(err);
                 }
             },
+            
+            
             getUserAttributes: async (accessToken) => {
                 try {
                     const command = new GetUserCommand({ AccessToken: accessToken });
@@ -63,6 +79,31 @@ const getState = ({ getStore, getActions, setStore }) => {
                     console.error(error);
                 }
             },
+            
+            getUserIdByEmail: async (useremail) => {
+                try {
+                    const response = await fetch(`${backend}get_user_id`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ useremail })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch user ID");
+                    }
+
+                    const data = await response.json();
+                    setStore({ activeuserid: data.user_id });
+                    return data.user_id; // Return the user ID to be used in the next step
+                } catch (error) {
+                    console.error("Error fetching user ID:", error);
+                    throw error;
+                }
+            },
+
             logout: () => {
                 Cookies.remove("accessToken");
                 setStore({ user: null, token: null });
@@ -248,7 +289,84 @@ const getState = ({ getStore, getActions, setStore }) => {
                     console.error("Error fetching phones:", error);
                     throw error;
                 }
-            }
+            },
+
+            getStreamToken : async (activeuserid) => {
+                try {
+                    const response = await fetch(`${backend}get_stream_token`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ activeuserid: String(activeuserid) })
+                    });
+            
+                    if (!response.ok) {
+                        throw new Error('Failed to get Stream token');
+                    }
+            
+                    const data = await response.json();
+                    console.log('Token payload:', data.token);
+            
+                    const chatClient = getStore().chatClient || StreamChat.getInstance(apiKey);
+            
+                    if (chatClient.userID) {
+                        await chatClient.disconnectUser();
+                    }
+            
+                    await chatClient.connectUser(
+                        { id: String(activeuserid) },
+                        data.token
+                    );
+            
+                    setStore({ streamToken: data.token, chatClient });
+            
+                } catch (error) {
+                    console.error('Error fetching Stream token:', error);
+                    throw error;
+                }
+            },
+            checkAndCreateChannel: async (activeuserid, targetuserid) => {
+                try {
+                    const response = await fetch(`${backend}check_and_create_channel`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ activeuserid: String(activeuserid), targetuserid: String(targetuserid) })
+                    });
+        
+                    if (!response.ok) {
+                        throw new Error('Failed to check and create channel');
+                    }
+        
+                    const data = await response.json();
+                    setStore({ channelId: data.channel_id, channel : data.channel });
+                } catch (error) {
+                    console.error('Error checking and creating channel:', error);
+                }
+            },
+
+            getChannels: async (activeuserid) => {
+                try {
+                    const response = await fetch(`${backend}get_channels`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ activeuserid: String(activeuserid) })
+                    });
+            
+                    if (!response.ok) {
+                        throw new Error('Failed to get channels');
+                    }
+            
+                    const data = await response.json();
+                    setStore({ channelslist: data.channels });
+                } catch (error) {
+                    console.error('Error fetching channels:', error);
+                }
+            },
         }
     };
 };

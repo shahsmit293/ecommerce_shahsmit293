@@ -3,8 +3,19 @@ import { Context } from '../store/appContext';
 import { useNavigate } from 'react-router-dom';
 
 const PhoneCard = ({ phones }) => {
-    const {actions} = useContext(Context)
-    const navigate =useNavigate()
+    const { store, actions } = useContext(Context);
+    const navigate = useNavigate();
+    
+    const handleView = async (phoneId) => {
+        await actions.get_each_phone(phoneId);
+        navigate(`/viewphone/${phoneId}`);
+    };
+
+    const handleChat = async (phoneUserId) => {
+        await actions.checkAndCreateChannel(store.activeuserid, phoneUserId);
+        navigate(`/chat`);
+    };
+
     return (
         <div className="row">
             {phones.map(phone => (
@@ -22,7 +33,8 @@ const PhoneCard = ({ phones }) => {
                             <p className="card-text"><strong>Location:</strong> {phone.location}</p>
                             <p className="card-text"><strong>IMEI:</strong> {phone.IMEI}</p>
                             <p className="card-text"><strong>User Email:</strong> {phone.user_email}</p>
-                            <button className="card-text" onClick={()=>{actions.get_each_phone(phone.id);navigate(`/viewphone/${phone.id}`)}}><strong>View</strong></button>
+                            <button className="btn btn-primary" onClick={() => handleView(phone.id)}><strong>View</strong></button>
+                            <button className="btn btn-secondary" onClick={() => handleChat(phone.user.id)}><strong>Chat</strong></button>
                         </div>
                     </div>
                 </div>

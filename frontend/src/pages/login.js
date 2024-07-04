@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const Login = () => {
     const navigate = useNavigate();
     const { store, actions } = useContext(Context);
-    const [username, setUsername] = useState('');
+    const [useremail, setuseremail] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
     const [verificationCode, setVerificationCode] = useState('');
@@ -18,7 +18,7 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await actions.login(username, password);
+        await actions.login(useremail, password);
         if (store.error) {
             // Store the error message
             setLoginError(store.error);
@@ -58,8 +58,8 @@ const Login = () => {
             <h2>Login</h2>
             <form onSubmit={handleSubmit}>
                 <label>
-                    Username:
-                    <input type="text" value={username} onChange={(e) => { setUsername(e.target.value); handleInputChange(); }} />
+                    Useremail:
+                    <input type="text" value={useremail} onChange={(e) => { setuseremail(e.target.value); handleInputChange(); }} />
                 </label>
                 <label>
                     Password:

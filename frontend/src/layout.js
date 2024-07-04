@@ -9,6 +9,8 @@ import SellSamsung from "./pages/sellsamsung";
 import SellGoogle from "./pages/sellgoogle";
 import ViewEachPhone from "./pages/vieweachphone";
 import Navbar from "./components/navbar";
+import PersonalChat from "./pages/personalchat";
+import Temper from "./pages/temper";
 const Layout = () => {
   return (
     <BrowserRouter>
@@ -22,6 +24,8 @@ const Layout = () => {
         <Route path="/sell/samsung" element={<SellSamsung />} />
         <Route path="/sell/google" element={<SellGoogle />} />
         <Route path="/viewphone/:seller_id" element={<ViewEachPhone />} />
+        <Route path="/chat" element={<PersonalChat />} />
+        <Route path="/temper" element={<Temper />} />
       </Routes>
     </BrowserRouter>
   );

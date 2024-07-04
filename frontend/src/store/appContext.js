@@ -19,24 +19,47 @@ const injectContext = PassedComponent => {
         );
 
         useEffect(() => {
-            const token = Cookies.get("accessToken");
-            if (token) {
-                state.actions.getUserAttributes(token).then(userData => {
-                    if (userData) {
-                        setState(state => ({
-                            ...state,
-                            store: {
-                                ...state.store,
-                                user: userData,
-                                token: token
+            const initialize = async () => {
+                const token = Cookies.get("accessToken");
+                if (token) {
+                    try {
+                        const userData = await state.actions.getUserAttributes(token);
+                        if (userData) {
+                            setState(state => ({
+                                ...state,
+                                store: {
+                                    ...state.store,
+                                    user: userData,
+                                    token: token
+                                }
+                            }));
+
+                            // Fetch user ID from backend using the email in userData
+                            const userId = await state.actions.getUserIdByEmail(userData.email);
+                            if (userId) {
+                                setState(state => ({
+                                    ...state,
+                                    store: {
+                                        ...state.store,
+                                        activeuserid: userId
+                                    }
+                                }));
+
+                                // Fetch Stream token after setting activeuserid
+                                await state.actions.getStreamToken(userId);
                             }
-                        }));
+                        }
+                    } catch (error) {
+                        console.error("Error initializing user data and Stream token:", error);
                     }
-                }).catch(error => {
-                    console.error("Error fetching user data:", error);
-                });
-            };            
-            state.actions.getPhones();
+                }
+                
+                // Fetch other initial data
+                await state.actions.getPhones();
+            };
+
+            initialize();
+
             // eslint-disable-next-line react-hooks/exhaustive-deps
         }, []); // <-- Include state.actions in the dependency array
 

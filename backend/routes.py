@@ -9,8 +9,12 @@ from werkzeug.utils import secure_filename
 import json
 from uuid import uuid4
 from dotenv import load_dotenv
+from stream_chat import StreamChat
 
 api = Blueprint('api', __name__)
+
+stream_chat_api_key = os.getenv("stream_chat_api_key")
+stream_chat_api_secret =os.getenv("stream_chat_api_secret")
 
 s3_bucket_name=os.getenv("s3_bucket_name")
 aws_access_key=os.getenv("aws_access_key")
@@ -148,5 +152,107 @@ def get_each_phone(sell_id):
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@api.route('/get_stream_token', methods=['POST'])
+def get_stream_token():
+    data = request.get_json()
+    activeuserid = data.get('activeuserid')
+
+    if not activeuserid:
+        return jsonify({'error': 'activeuserid is required'}), 400
+
+    chat_client = StreamChat(api_key=stream_chat_api_key, api_secret=stream_chat_api_secret)
+    token = chat_client.create_token(activeuserid)
+
+    return jsonify({'token': token})
+
+@api.route('/check_and_create_channel', methods=['POST'])
+def check_and_create_channel():
+    data = request.get_json()
+    activeuserid = data.get('activeuserid')
+    targetuserid = data.get('targetuserid')
+
+    if not activeuserid or not targetuserid:
+        return jsonify({'error': 'activeuserid and targetuserid are required'}), 400
+
+    chat_client = StreamChat(api_key=stream_chat_api_key, api_secret=stream_chat_api_secret)
+
+    # Standardize channel ID to ensure the smaller user ID comes first
+    user_ids = sorted([str(activeuserid), str(targetuserid)])
+    channel_id = f"{user_ids[0]}-{user_ids[1]}"
+    channel = chat_client.channel('messaging', channel_id)
+
+    try:
+        # Query the channel state to see if it exists
+        channel_state = channel.query()
+        return jsonify({'channel': channel_state['channel']})
+    except Exception:
+        # Channel doesn't exist, create a new one
+        pass
+
+    # Create new channel
+    try:
+        members = [str(activeuserid), str(targetuserid)]
+        message = {"text": "You both are connected now.Enjoy our service."}
+        response = channel.create(user_id=str(activeuserid), data={"members": members, "created_by_id": str(activeuserid)})
+        channel.send_message(message, user_id=str(activeuserid))
+        return jsonify({'channel': response['channel']})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+
+@api.route('/get_user_id', methods=['POST'])
+def get_user_id():
+    data = request.json
+    useremail = data.get('useremail')
+    if not useremail:
+        return jsonify({"error": "Email is required"}), 400
+
+    user = User.query.filter_by(email=useremail).first()
+    if user:
+        return jsonify({"user_id": user.id})
+    else:
+        return jsonify({"error": "User not found"}), 404
+
+
+@api.route('/get_channels', methods=['POST'])
+def get_channels():
+    data = request.get_json()
+    activeuserid = data.get('activeuserid')
+
+    if not activeuserid:
+        return jsonify({'error': 'activeuserid is required'}), 400
+
+    chat_client = StreamChat(api_key=stream_chat_api_key, api_secret=stream_chat_api_secret)
+
+    try:
+        # Query channels with specific type and filter by members
+        response = chat_client.query_channels({
+            'type': 'messaging',
+            'members': { '$in': [str(activeuserid)] }
+        })
+        
+        # Extract channel objects from the response
+        channels = response.get('channels', [])
+        print(channels)
+        filtered_channels = []
+        member_details = []
+
+        # Filter channels where activeuserid is a member and extract member details
+        for channel_info in channels:
+            channel = channel_info.get('channel', {})
+            members = channel_info.get('members', [])
+
+            if any(member['user_id'] == str(activeuserid) for member in members):
+                filtered_channels.append(channel.get('id', ''))
+                member_details.extend(members)
+
+        return jsonify({'channels': filtered_channels, 'members': member_details})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 

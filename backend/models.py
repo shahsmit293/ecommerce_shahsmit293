@@ -61,5 +61,6 @@ class Phones(db.Model):
             "location": self.location,
             'IMEI':self.IMEI,
             "user_email": self.user_email,
+            "user": self.user.serialize() if self.user else {},
             "image_url":self.image_url
         }

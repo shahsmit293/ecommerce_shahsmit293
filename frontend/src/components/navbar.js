@@ -47,6 +47,9 @@ const Navbar = () => {
             {store.token && (
               <>
                 <li className="nav-item">
+                  <button className="nav-link" onClick={() => navigate('/temper')}>Temper</button>
+                </li>
+                <li className="nav-item">
                   <button className="nav-link" onClick={handleLogout}>Logout</button>
                 </li>
                 <li className="nav-item dropdown">
