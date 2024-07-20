@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Context } from "../store/appContext";
-
+import PayPalButton from "../components/PayPalButton";
 const ViewEachPhone = () => {
     const { seller_id } = useParams();
     const { store, actions } = useContext(Context);
@@ -44,6 +44,7 @@ const ViewEachPhone = () => {
                 <p><strong>Location:</strong> {location}</p>
                 <p><strong>IMEI:</strong> {IMEI}</p>
                 <p><strong>User Email:</strong> {user_email}</p>
+                <PayPalButton price={price}/>
                 <div>No images available for this phone.</div>
             </div>
         );
@@ -63,7 +64,7 @@ const ViewEachPhone = () => {
             <p><strong>Location:</strong> {location}</p>
             <p><strong>IMEI:</strong> {IMEI}</p>
             <p><strong>User Email:</strong> {user_email}</p>
-
+            <PayPalButton price={price} currency={"USD"} />
             <div>
                 <h2>Images</h2>
                 {image_url.map((imageUrl, index) => (

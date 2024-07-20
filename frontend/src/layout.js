@@ -11,6 +11,8 @@ import ViewEachPhone from "./pages/vieweachphone";
 import Navbar from "./components/navbar";
 import PersonalChat from "./pages/personalchat";
 import Temper from "./pages/temper";
+import PaymentSuccess from "./components/successfullpayment";
+import CancelPayment from "./components/cancelpayment";
 const Layout = () => {
   return (
     <BrowserRouter>
@@ -26,6 +28,8 @@ const Layout = () => {
         <Route path="/viewphone/:seller_id" element={<ViewEachPhone />} />
         <Route path="/chat" element={<PersonalChat />} />
         <Route path="/temper" element={<Temper />} />
+        <Route path="/paymentsuccess" element={<PaymentSuccess />} />
+        <Route path="/paymentcancel" element={<CancelPayment />} />
       </Routes>
     </BrowserRouter>
   );

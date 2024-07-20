@@ -9,6 +9,7 @@ import {
 } from "@aws-sdk/client-cognito-identity-provider";
 import Cookies from 'js-cookie';
 import { StreamChat } from 'stream-chat';
+
 // Initialize Cognito client with environment variable
 const client = new CognitoIdentityProviderClient({ region: process.env.REACT_APP_AWS_REGION });
 
@@ -31,7 +32,7 @@ const getState = ({ getStore, getActions, setStore }) => {
             activeuserid: null,
             channelId:null,
             channelslist: null,
-            channel: null
+            channel: null,
         },
         actions: {
             login: async (useremail, password) => {
@@ -313,13 +314,15 @@ const getState = ({ getStore, getActions, setStore }) => {
                     if (chatClient.userID) {
                         await chatClient.disconnectUser();
                     }
-            
+
+         
                     await chatClient.connectUser(
                         { id: String(activeuserid) },
                         data.token
                     );
-            
-                    setStore({ streamToken: data.token, chatClient });
+                    
+                    console.log(chatClient)
+                    setStore({ streamToken: data.token, chatClient});
             
                 } catch (error) {
                     console.error('Error fetching Stream token:', error);
@@ -367,6 +370,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                     console.error('Error fetching channels:', error);
                 }
             },
+
         }
     };
 };

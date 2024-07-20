@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, Blueprint
+from flask import Flask, request, jsonify, Blueprint, redirect , url_for
 from flask_cors import CORS, cross_origin
 from models import db, User, Phones  # Adjust as per your project structure
 import boto3
@@ -10,11 +10,13 @@ import json
 from uuid import uuid4
 from dotenv import load_dotenv
 from stream_chat import StreamChat
-
+import paypalrestsdk
 api = Blueprint('api', __name__)
-
+load_dotenv()
 stream_chat_api_key = os.getenv("stream_chat_api_key")
 stream_chat_api_secret =os.getenv("stream_chat_api_secret")
+
+frontend_url=os.getenv("REACT_FRONTEND_URL")
 
 s3_bucket_name=os.getenv("s3_bucket_name")
 aws_access_key=os.getenv("aws_access_key")
@@ -255,4 +257,89 @@ def get_channels():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Configure PayPal SDK using environment variables
+paypalrestsdk.configure({
+    "mode": os.getenv("PAYPAL_MODE"),  # 'sandbox' or 'live'
+    "client_id": os.getenv("PAYPAL_CLIENT_ID"),
+    "client_secret": os.getenv("PAYPAL_CLIENT_SECRET")
+})
 
+@api.route('/create-payment', methods=['POST'])
+def create_payment():
+    data = request.get_json()  # Parse the JSON payload
+    price = data.get('price')  # Get price from the request body
+    currency = "USD"  # Fixed currency
+
+    if not price:
+        return jsonify({'error': 'Price is required'}), 400
+
+    payment = paypalrestsdk.Payment({
+        "intent": "sale",
+        "payer": {
+            "payment_method": "paypal"
+        },
+        "transactions": [{
+            "amount": {
+                "total": price,  # Use the dynamic price
+                "currency": currency
+            },
+            "description": "Payment for product"
+        }],
+        "redirect_urls": {
+            "return_url": f"{frontend_url}paymentsuccess",
+            "cancel_url": f"{frontend_url}paymentcancel"
+        }
+    })
+
+    if payment.create():
+        for link in payment['links']:
+            if link['rel'] == 'approval_url':
+                approval_url = str(link['href'])
+                response = jsonify({'approval_url': approval_url})
+                response.headers['Content-Type'] = 'application/json'
+                return response
+    else:
+        response = jsonify({'error': payment.error})
+        response.headers['Content-Type'] = 'application/json'
+        return response, 500
+    
+@api.route('/payment-success', methods=['POST'])
+def payment_success():
+    data = request.get_json()  # Ensure you're using .get_json() to parse JSON
+    payment_id = data.get('paymentId')
+    payer_id = data.get('payerId')
+
+
+    if not payment_id or not payer_id:
+        return jsonify({'error': 'Missing paymentId or PayerID'}), 400
+
+    payment = paypalrestsdk.Payment.find(payment_id)
+
+    try:
+        if payment.execute({"payer_id": payer_id}):
+            return jsonify({'status': 'Payment successful'})
+        else:
+            return jsonify({'status': 'Payment failed', 'error': payment.error}), 500
+    except Exception as e:
+        return jsonify({'status': 'Payment error', 'error': str(e)}), 500
+
+@api.route('/get-payment-details', methods=['GET'])
+def get_payment_details():
+    payment_id = request.args.get('paymentId')
+    
+    if not payment_id:
+        return jsonify({'error': 'Missing paymentId'}), 400
+
+    try:
+        payment = paypalrestsdk.Payment.find(payment_id)
+        price = payment.transactions[0].amount.total  # Adjust based on your data structure
+        return jsonify({'price': price})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+
+@api.route('/error')
+def error_page():
+    return "Payment error."

@@ -11,6 +11,8 @@ python-dotenv = "*"
 flask-cors = "*"
 flask-migrate = "*"
 stream-chat = "*"
+getstream = "*"
+paypalrestsdk = "*"
 
 [dev-packages]
 

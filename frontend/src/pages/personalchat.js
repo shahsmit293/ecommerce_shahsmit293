@@ -94,13 +94,13 @@ const PersonalChat = () => {
     return <div>Setting up client & connection...</div>;
   }
 
-  const filters = { id: store.channel.id };
-  const sort = { last_message_at: -1 };
-  const options = { state: true, watch: true, presence: true };
+  // const filters = { id: store.channel.id };
+  // const sort = { last_message_at: -1 };
+  // const options = { state: true, watch: true, presence: true };
 
   return (
     <Chat client={store.chatClient} theme="team light">
-      <ChannelList filters={filters} sort={sort} options={options} />
+      {/* <ChannelList filters={filters} sort={sort} options={options} /> */}
       <Channel channel={store.chatClient.channel('messaging', store.channel.id)}>
         <Window>
           <ChannelHeader />
