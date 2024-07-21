@@ -124,6 +124,10 @@ const SellIphone = () => {
   const [seller, setSeller] = useState('');
   const [location, setLocation] = useState('');
   const [price,setPrice] = useState('')
+  const [paypal_email,setPaypalemail] = useState('')
+  const [first_name,setFirstname] = useState('')
+  const [last_name,setLastname] = useState('')
+  const [seller_contact_number,setSellercontactnumber] = useState('')
   const [IMEI,setIMEI] = useState('')
   const [images, setImages] = useState([]);
   const [error, setError] = useState('');
@@ -197,7 +201,11 @@ const SellIphone = () => {
         seller: seller,
         location: location,
         IMEI: IMEI,
-        user_email: store.user.email
+        user_email: store.user.email,
+        paypal_email: paypal_email,
+        first_name: first_name,
+        last_name: last_name,
+        seller_contact_number: seller_contact_number
     };
 
     try {
@@ -289,6 +297,26 @@ const SellIphone = () => {
         <div className="mb-3">
           <label htmlFor="IMEI" className="form-label">IMEI number</label>
           <input type="number" id="IMEI" className="form-control" value={IMEI} onChange={(e)=>setIMEI(e.target.value)} />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Your PaypalEmail</label>
+          <input type="email" id="paypal_email" className="form-control" value={paypal_email} onChange={(e)=>setPaypalemail(e.target.value)} />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Your FirstName</label>
+          <input type="text" id="first_name" className="form-control" value={first_name} onChange={(e)=>setFirstname(e.target.value)} />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Your LastName</label>
+          <input type="text" id="last_name" className="form-control" value={last_name} onChange={(e)=>setLastname(e.target.value)} />
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Your ContactNumber</label>
+          <input type="number" id="seller_contact_number" className="form-control" value={seller_contact_number} onChange={(e)=>setSellercontactnumber(e.target.value)} />
         </div>
 
         <div className="mb-3">

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Context } from '../store/appContext';
 
 const PaymentSuccess = () => {
     const navigate = useNavigate()
@@ -8,12 +9,12 @@ const PaymentSuccess = () => {
     const [paymentId, setPaymentId] = useState('');
     const [payerId, setPayerId] = useState('');
     const backend = process.env.REACT_APP_FLASK_BACKEND_URL;
+    const [address,setAddrees] =useState("")
 
     useEffect(() => {
         const queryParams = new URLSearchParams(window.location.search);
         const paymentId = queryParams.get('paymentId');
         const payerId = queryParams.get('PayerID');
-
         console.log('Payment ID:', paymentId);
         console.log('Payer ID:', payerId);
 
@@ -42,7 +43,7 @@ const PaymentSuccess = () => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ paymentId, payerId }),
+            body: JSON.stringify({ paymentId, payerId ,address}),
         })
         .then(response => response.json())
         .then(data => {
@@ -62,6 +63,9 @@ const PaymentSuccess = () => {
     return (
         <div>
             <h1>{status}</h1>
+            <label>Add Shipping Address To Buy this product:
+                <input type="text" value={address} onChange={(e) => setAddrees(e.target.value)}/>
+            </label>
             {price !== null && <p>Price: ${price}</p>}
             <button onClick={handleExecutePayment}>Confirm Payment</button>
             <button onClick={()=>navigate("/paymentcancel")}>Cancel Payment</button>

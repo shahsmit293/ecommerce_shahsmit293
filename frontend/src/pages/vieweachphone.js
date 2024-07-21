@@ -6,8 +6,9 @@ const ViewEachPhone = () => {
     const { seller_id } = useParams();
     const { store, actions } = useContext(Context);
     const [loading, setLoading] = useState(true);
-
+    const [buyerid,setBuyerid]=useState("")
     useEffect(() => {
+        setBuyerid(store.activeuserid)
         const fetchPhone = async () => {
             setLoading(true);
             await actions.get_each_phone(seller_id);
@@ -26,7 +27,7 @@ const ViewEachPhone = () => {
         return <div>No phone details available.</div>;
     }
 
-    const { model, price, phonetype, color, storage, carrier, condition, seller, location, IMEI, user_email, image_url } = store.each_phone[0];
+    const {id, model, price, phonetype, color, storage, carrier, condition, seller, location, IMEI, user_email, image_url, first_name, last_name, paypal_email, seller_contact_number } = store.each_phone[0];
 
     // Check if image_urls is defined and is an array before mapping
     if (!Array.isArray(image_url) || image_url.length === 0) {
@@ -64,7 +65,10 @@ const ViewEachPhone = () => {
             <p><strong>Location:</strong> {location}</p>
             <p><strong>IMEI:</strong> {IMEI}</p>
             <p><strong>User Email:</strong> {user_email}</p>
-            <PayPalButton price={price} currency={"USD"} />
+            <p><strong>First Name:</strong> {first_name}</p>
+            <p><strong>Last Name:</strong> {last_name}</p>
+            <p><strong>Paypal Email:</strong> {paypal_email}</p>
+            <PayPalButton price={price} sellerpaypalemail={paypal_email} buyer_id={buyerid} phone_sell_id={id} />
             <div>
                 <h2>Images</h2>
                 {image_url.map((imageUrl, index) => (

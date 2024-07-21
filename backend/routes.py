@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, Blueprint, redirect , url_for
 from flask_cors import CORS, cross_origin
-from models import db, User, Phones  # Adjust as per your project structure
+from models import db, User, Phones, Transaction # Adjust as per your project structure
 import boto3
 from functools import wraps
 import os
@@ -113,7 +113,11 @@ def add_phone():
             location=phoneDetails['location'],
             IMEI=phoneDetails['IMEI'],
             user_email=user_email,
-            image_url=uploaded_files  # List of URLs for uploaded images
+            image_url=uploaded_files,
+            paypal_email=phoneDetails['paypal_email'],
+            first_name=phoneDetails['first_name'],
+            last_name=phoneDetails['last_name'],
+            seller_contact_number=phoneDetails['seller_contact_number']
         )
 
         db.session.add(new_phone)
@@ -268,11 +272,19 @@ paypalrestsdk.configure({
 def create_payment():
     data = request.get_json()  # Parse the JSON payload
     price = data.get('price')  # Get price from the request body
+    sellerpaypalemail =data.get('sellerpaypalemail')
+    buyer_id=data.get('buyer_id')
+    phone_sell_id=data.get('phone_sell_id')
     currency = "USD"  # Fixed currency
 
     if not price:
         return jsonify({'error': 'Price is required'}), 400
-
+    
+    custom_data = {
+        "sellerpaypalemail": sellerpaypalemail,
+        "buyer_id": buyer_id,
+        "phone_sell_id": phone_sell_id,
+    }
     payment = paypalrestsdk.Payment({
         "intent": "sale",
         "payer": {
@@ -283,7 +295,8 @@ def create_payment():
                 "total": price,  # Use the dynamic price
                 "currency": currency
             },
-            "description": "Payment for product"
+            "description": "Payment for product",
+            "custom": json.dumps(custom_data)
         }],
         "redirect_urls": {
             "return_url": f"{frontend_url}paymentsuccess",
@@ -302,14 +315,40 @@ def create_payment():
         response = jsonify({'error': payment.error})
         response.headers['Content-Type'] = 'application/json'
         return response, 500
-    
+
+def create_payout(sellerpaypalemail, amount):
+    payout = paypalrestsdk.Payout({
+        "sender_batch_header": {
+            "email_subject": "You have a payment",
+            "email_message": "You have received a payment"
+        },
+        "items": [{
+            "recipient_type": "EMAIL",
+            "amount": {
+                "value": amount,
+                "currency": "USD"
+            },
+            "receiver": sellerpaypalemail,
+            "note": "Thank you for your business.",
+            "sender_item_id": "item_1"
+        }]
+    })
+
+    if payout.create():
+        print(payout)
+        payout_batch_id = payout['batch_header']['payout_batch_id']
+        print(payout_batch_id)
+        return {'status': 'Payout created successfully','payout_batch_id': payout_batch_id}
+    else:
+        return {'error': payout.error}
+
+
 @api.route('/payment-success', methods=['POST'])
 def payment_success():
-    data = request.get_json()  # Ensure you're using .get_json() to parse JSON
+    data = request.get_json()
     payment_id = data.get('paymentId')
     payer_id = data.get('payerId')
-
-
+    address=data.get('address')
     if not payment_id or not payer_id:
         return jsonify({'error': 'Missing paymentId or PayerID'}), 400
 
@@ -317,7 +356,33 @@ def payment_success():
 
     try:
         if payment.execute({"payer_id": payer_id}):
-            return jsonify({'status': 'Payment successful'})
+            payment_transaction_id = payment.transactions[0].related_resources[0].sale.id
+
+            payment_amount = float(payment.transactions[0].amount.total)
+            payout_amount = payment_amount - 10
+
+            custom_data = json.loads(payment.transactions[0].custom)
+
+            sellerpaypalemail = custom_data.get('sellerpaypalemail')
+            buyer_id = custom_data.get('buyer_id')
+            phone_sell_id = custom_data.get('phone_sell_id')
+            
+
+            payout_result = create_payout(sellerpaypalemail, payout_amount)
+            payout_transaction_id=payout_result.get('payout_batch_id')
+            new_transaction = Transaction(
+                buyer_id=buyer_id,
+                phone_sell_id=phone_sell_id,
+                payment_amount=payment_amount,
+                payout_amount=payout_amount,
+                shipping_address=address,
+                payment_transaction_id=payment_transaction_id,
+                payout_transaction_id=payout_transaction_id
+            )
+            db.session.add(new_transaction)
+            db.session.commit()
+
+            return jsonify({'status': 'Payment successful', 'payout_result': payout_result})
         else:
             return jsonify({'status': 'Payment failed', 'error': payment.error}), 500
     except Exception as e:
@@ -336,7 +401,6 @@ def get_payment_details():
         return jsonify({'price': price})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 
 
