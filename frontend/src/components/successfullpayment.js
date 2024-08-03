@@ -49,7 +49,8 @@ const PaymentSuccess = () => {
         .then(data => {
             if (data.status === 'Payment successful') {
                 setStatus('Payment successful!');
-                navigate('/') // Redirect to success page
+                navigate('/');
+                window.location.reload();
             } else {
                 setStatus('Payment failed.');
             }

@@ -10,9 +10,15 @@ import SellGoogle from "./pages/sellgoogle";
 import ViewEachPhone from "./pages/vieweachphone";
 import Navbar from "./components/navbar";
 import PersonalChat from "./pages/personalchat";
-import Temper from "./pages/temper";
+import Inbox from "./pages/inbox";
 import PaymentSuccess from "./components/successfullpayment";
 import CancelPayment from "./components/cancelpayment";
+import Cart from "./pages/cart";
+import Favorite from "./pages/favorites";
+import Purchase from "./pages/purchase";
+import Sold from "./pages/sold";
+import FilterPage from "./pages/filterpage";
+import MyListing from "./pages/mylisting";
 const Layout = () => {
   return (
     <BrowserRouter>
@@ -25,11 +31,17 @@ const Layout = () => {
         <Route path="/sell/iphone" element={<SellIphone />} />
         <Route path="/sell/samsung" element={<SellSamsung />} />
         <Route path="/sell/google" element={<SellGoogle />} />
-        <Route path="/viewphone/:seller_id" element={<ViewEachPhone />} />
+        <Route path="/viewphone/:phone_id" element={<ViewEachPhone />} />
         <Route path="/chat" element={<PersonalChat />} />
-        <Route path="/temper" element={<Temper />} />
+        <Route path="/inbox" element={<Inbox />} />
         <Route path="/paymentsuccess" element={<PaymentSuccess />} />
         <Route path="/paymentcancel" element={<CancelPayment />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/favorite" element={<Favorite />} />
+        <Route path="/purchase" element={<Purchase />} />
+        <Route path="/sold" element={<Sold />} />
+        <Route path="/filter" element={<FilterPage />} />
+        <Route path="/mylisting" element={<MyListing />} />
       </Routes>
     </BrowserRouter>
   );

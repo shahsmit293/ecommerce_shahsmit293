@@ -33,6 +33,13 @@ const getState = ({ getStore, getActions, setStore }) => {
             channelId:null,
             channelslist: null,
             channel: null,
+            cartdetails: [],
+            allfavorites: [],
+            allpurchased: [],
+            mysold: [],
+            allsold: [],
+            filteredPhones: [],
+            alllistedphones: []
         },
         actions: {
             login: async (useremail, password) => {
@@ -244,6 +251,56 @@ const getState = ({ getStore, getActions, setStore }) => {
                 }
             },
 
+            updatePrice : async (phoneid, newprice) => {
+                try {
+                  const response = await fetch(`${backend}edit_price`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      phone_id: phoneid,
+                      new_price: newprice,
+                    }),
+                  });
+              
+                  if (!response.ok) {
+                    throw new Error('Failed to update price');
+                  }
+              
+                  const data = await response.json();
+                  console.log('Price updated successfully:', data);
+              
+                } catch (error) {
+                  console.error('Error updating price:', error);
+                }
+              },
+
+              updatePaypalEmail : async (phoneid, new_paypal_email) => {
+                try {
+                  const response = await fetch(`${backend}edit_paypalemail`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      phone_id: phoneid,
+                      new_paypal_email: new_paypal_email,
+                    }),
+                  });
+              
+                  if (!response.ok) {
+                    throw new Error('Failed to update paypal email');
+                  }
+              
+                  const data = await response.json();
+                  console.log('Paypal email updated successfully:', data);
+              
+                } catch (error) {
+                  console.error('Error updating price:', error);
+                }
+              },
+
             getPhones: async () => {
                 try {
                     const response = await fetch(`${backend}phones`, {
@@ -292,6 +349,28 @@ const getState = ({ getStore, getActions, setStore }) => {
                 }
             },
 
+            deletePhone: async (phone_id) => {
+                try {
+                    const response = await fetch(`${backend}deletephone`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ phone_id }),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to delete item from cart');
+                    }
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error deleting item from cart:', error);
+                    throw error;
+                }
+            },
             getStreamToken : async (activeuserid) => {
                 try {
                     const response = await fetch(`${backend}get_stream_token`, {
@@ -370,6 +449,272 @@ const getState = ({ getStore, getActions, setStore }) => {
                     console.error('Error fetching channels:', error);
                 }
             },
+
+            addToCart: async (buyer_id, phone_sell_id) => {
+                try {
+                    const response = await fetch(`${backend}addcart`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            buyer_id,
+                            phone_sell_id
+                        }),
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to add item to cart');
+                    }
+            
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error adding item to cart:', error);
+                    throw error;
+                }
+            },
+            
+            getcart: async (buyer_id) => {
+                try {
+                    const response = await fetch(`${backend}getcart`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ buyer_id})
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch phone details");
+                    }
+            
+                    const data = await response.json();
+                    setStore({cartdetails: data.phones})
+                    return data.phones;
+                } catch (error) {
+                    console.error("Error fetching phone details for buyer:", error);
+                    throw error;
+                }
+            },
+
+            deleteFromCart: async (buyer_id, phone_sell_id) => {
+                try {
+                    const response = await fetch(`${backend}deletecart`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ buyer_id, phone_sell_id }),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to delete item from cart');
+                    }
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error deleting item from cart:', error);
+                    throw error;
+                }
+            },
+
+            addToFavorite: async (buyer_id, phone_sell_id) => {
+                try {
+                    const response = await fetch(`${backend}addfavorite`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            buyer_id,
+                            phone_sell_id
+                        }),
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to add item to favorite');
+                    }
+            
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error adding item to favorites:', error);
+                    throw error;
+                }
+            },
+            
+            getFavorite: async (buyer_id) => {
+                try {
+                    const response = await fetch(`${backend}getfavorite`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ buyer_id})
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch phone details");
+                    }
+            
+                    const data = await response.json();
+                    setStore({allfavorites: data.phones})
+                    return data.phones;
+                } catch (error) {
+                    console.error("Error fetching phone details:", error);
+                    throw error;
+                }
+            },
+
+            deleteFavorite: async (buyer_id, phone_sell_id) => {
+                try {
+                    const response = await fetch(`${backend}deletefavorite`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ buyer_id, phone_sell_id }),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to delete item from favorites');
+                    }
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error deleting item from favorites:', error);
+                    throw error;
+                }
+            },
+
+            getPurchase: async (buyer_id) => {
+                try {
+                    const response = await fetch(`${backend}getpurchase`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ buyer_id})
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch phone details");
+                    }
+            
+                    const data = await response.json();
+                    setStore({allpurchased: data.phones})
+                    return data.phones;
+                } catch (error) {
+                    console.error("Error fetching phone details:", error);
+                    throw error;
+                }
+            },
+
+            getSold: async (buyer_id) => {
+                try {
+                    const response = await fetch(`${backend}getsold`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ buyer_id})
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch phone details");
+                    }
+            
+                    const data = await response.json();
+                    setStore({mysold: data.phones})
+                    return data.phones;
+                } catch (error) {
+                    console.error("Error fetching phone details:", error);
+                    throw error;
+                }
+            },
+
+            getAllSold: async () => {
+                try {
+                    const response = await fetch(`${backend}getallsold`, {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch phone details");
+                    }
+            
+                    const data = await response.json();
+                    setStore({allsold: data.allsoldphones})
+                    return data.phones;
+                } catch (error) {
+                    console.error("Error fetching phone details:", error);
+                    throw error;
+                }
+            },
+
+            fetchFilteredPhones: async (filters) => {
+                try {
+                    const queryString = new URLSearchParams(filters).toString();
+                    const response = await fetch(`${backend}filter-phones?${queryString}`, {
+                        method: "GET",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch filtered phones");
+                    }
+            
+                    const data = await response.json();
+                    setStore({ filteredPhones: data.phones });
+                    return data.phones;
+                } catch (error) {
+                    console.error("Error fetching filtered phones:", error);
+                    throw error;
+                }
+            },
+            
+            getalllistingphone: async (sellerid) => {
+                try {
+                    const response = await fetch(`${backend}getmylisting`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ sellerid})
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch phone details");
+                    }
+            
+                    const data = await response.json();
+                    setStore({alllistedphones: data.alllistedphones})
+                    return data.alllistedphones;
+                } catch (error) {
+                    console.error("Error fetching phone details:", error);
+                    throw error;
+                }
+            },
+
 
         }
     };

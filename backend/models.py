@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import ARRAY
-import datetime
+from sqlalchemy.sql import func
 
 db = SQLAlchemy()
 
@@ -83,16 +83,19 @@ class Transaction(db.Model):
     __tablename__ = 'transaction'
     id = db.Column(db.Integer, primary_key=True)
     buyer_id = db.Column(db.Integer, nullable=True)
+    seller_id = db.Column(db.Integer, nullable=True)
     phone_sell_id = db.Column(db.Integer, db.ForeignKey('phones.id'), nullable=True)
     payment_amount = db.Column(db.Integer, nullable=True)
     payout_amount = db.Column(db.Integer, nullable=True)
     shipping_address = db.Column(db.String(2000), nullable=True)
     payment_transaction_id = db.Column(db.String(255), nullable=True)
     payout_transaction_id = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=True)
     phone = db.relationship('Phones', backref=db.backref('transactions', lazy=True))
 
-    def __init__(self, buyer_id,phone_sell_id, payment_amount, payout_amount, shipping_address, payment_transaction_id, payout_transaction_id):
+    def __init__(self, buyer_id, seller_id, phone_sell_id, payment_amount, payout_amount, shipping_address, payment_transaction_id, payout_transaction_id):
         self.buyer_id = buyer_id
+        self.seller_id=seller_id
         self.phone_sell_id=phone_sell_id
         self.payment_amount = payment_amount
         self.payout_amount = payout_amount
@@ -104,11 +107,51 @@ class Transaction(db.Model):
         return {
             "id": self.id,
             "buyer_id": self.buyer_id,
+            "seller_id": self.seller_id,
             "phone_sell_id": self.phone_sell_id,
             "payment_amount": self.payment_amount,
             "payout_amount": self.payout_amount,
             "shipping_address": self.shipping_address,
             "payment_transaction_id": self.payment_transaction_id,
             "payout_transaction_id": self.payout_transaction_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
             "phone": self.phone.serialize() if self.phone else {},
+        }
+
+class Cart(db.Model):
+    __tablename__ = 'cart'
+    id = db.Column(db.Integer, primary_key=True)
+    buyer_id = db.Column(db.Integer, nullable=True)
+    phone_sell_id = db.Column(db.Integer, db.ForeignKey('phones.id', ondelete='CASCADE'), nullable=True)
+    phone = db.relationship('Phones', backref=db.backref('carts', lazy=True, cascade="all, delete-orphan"))
+
+    def __init__(self, buyer_id, phone_sell_id):
+        self.buyer_id = buyer_id
+        self.phone_sell_id=phone_sell_id
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "buyer_id": self.buyer_id,
+            "phone_sell_id": self.phone_sell_id,
+            "phone": self.phone.serialize() if self.phone else {}
+        }
+
+class Favorite(db.Model):
+    __tablename__ = 'favorite'
+    id = db.Column(db.Integer, primary_key=True)
+    buyer_id = db.Column(db.Integer, nullable=True)
+    phone_sell_id = db.Column(db.Integer, db.ForeignKey('phones.id', ondelete='CASCADE'), nullable=True)
+    phone = db.relationship('Phones', backref=db.backref('favorites', lazy=True, cascade="all, delete-orphan"))
+
+    def __init__(self, buyer_id, phone_sell_id):
+        self.buyer_id = buyer_id
+        self.phone_sell_id=phone_sell_id
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "buyer_id": self.buyer_id,
+            "phone_sell_id": self.phone_sell_id,
+            "phone": self.phone.serialize() if self.phone else {}
         }

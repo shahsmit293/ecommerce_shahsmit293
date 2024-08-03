@@ -47,7 +47,22 @@ const Navbar = () => {
             {store.token && (
               <>
                 <li className="nav-item">
-                  <button className="nav-link" onClick={() => navigate('/temper')}>Temper</button>
+                  <button className="nav-link" onClick={() => navigate('/inbox')}>Inbox</button>
+                </li>
+                <li className="nav-item">
+                  <button className="nav-link" onClick={() => navigate('/favorite')}>My Favorites</button>
+                </li>
+                <li className="nav-item">
+                  <button className="nav-link" onClick={() => navigate('/purchase')}>My Purchase</button>
+                </li>
+                <li className="nav-item">
+                  <button className="nav-link" onClick={() => navigate('/sold')}>My Selling</button>
+                </li>
+                <li className="nav-item">
+                  <button className="nav-link" onClick={() => navigate('/mylisting')}>My Listing</button>
+                </li>
+                <li className="nav-item">
+                  <button className="nav-link" onClick={() => navigate('/cart')}>Cart</button>
                 </li>
                 <li className="nav-item">
                   <button className="nav-link" onClick={handleLogout}>Logout</button>

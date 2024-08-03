@@ -1,23 +1,32 @@
 import React, { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Context } from "../store/appContext";
-import PayPalButton from "../components/PayPalButton";
+
 const ViewEachPhone = () => {
-    const { seller_id } = useParams();
+    const { phone_id } = useParams();
+    const navigate = useNavigate();
     const { store, actions } = useContext(Context);
     const [loading, setLoading] = useState(true);
-    const [buyerid,setBuyerid]=useState("")
+
     useEffect(() => {
-        setBuyerid(store.activeuserid)
         const fetchPhone = async () => {
-            setLoading(true);
-            await actions.get_each_phone(seller_id);
-            setLoading(false);
+            try {
+                setLoading(true);
+                await actions.get_each_phone(phone_id);
+                // Only fetch cart and purchase details if a user is logged in
+                if (store.activeuserid) {
+                    await actions.getcart(store.activeuserid);
+                    await actions.getPurchase(store.activeuserid);
+                }
+            } catch (err) {
+                console.error('Fetch error:', err);
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchPhone();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [seller_id]);
+    }, [phone_id, store.activeuserid]);
 
     if (loading) {
         return <div>Loading...</div>;
@@ -27,32 +36,28 @@ const ViewEachPhone = () => {
         return <div>No phone details available.</div>;
     }
 
-    const {id, model, price, phonetype, color, storage, carrier, condition, seller, location, IMEI, user_email, image_url, first_name, last_name, paypal_email, seller_contact_number } = store.each_phone[0];
+    const {
+        id,
+        model,
+        price,
+        phonetype,
+        color,
+        storage,
+        carrier,
+        condition,
+        seller,
+        location,
+        IMEI,
+        user_email,
+        image_url,
+        first_name,
+        last_name,
+        paypal_email,
+        user
+    } = store.each_phone[0];
 
-    // Check if image_urls is defined and is an array before mapping
-    if (!Array.isArray(image_url) || image_url.length === 0) {
-        return (
-            <div>
-                <h1>Phone Details</h1>
-                <p><strong>Model:</strong> {model}</p>
-                <p><strong>Price:</strong> ${price}</p>
-                <p><strong>Type:</strong> {phonetype}</p>
-                <p><strong>Color:</strong> {color}</p>
-                <p><strong>Storage:</strong> {storage}</p>
-                <p><strong>Carrier:</strong> {carrier}</p>
-                <p><strong>Condition:</strong> {condition}</p>
-                <p><strong>Seller:</strong> {seller}</p>
-                <p><strong>Location:</strong> {location}</p>
-                <p><strong>IMEI:</strong> {IMEI}</p>
-                <p><strong>User Email:</strong> {user_email}</p>
-                <PayPalButton price={price}/>
-                <div>No images available for this phone.</div>
-            </div>
-        );
-    }
-
-    return (
-        <div>
+    const renderPhoneDetails = () => (
+        <>
             <h1>Phone Details</h1>
             <p><strong>Model:</strong> {model}</p>
             <p><strong>Price:</strong> ${price}</p>
@@ -63,16 +68,54 @@ const ViewEachPhone = () => {
             <p><strong>Condition:</strong> {condition}</p>
             <p><strong>Seller:</strong> {seller}</p>
             <p><strong>Location:</strong> {location}</p>
-            <p><strong>IMEI:</strong> {IMEI}</p>
-            <p><strong>User Email:</strong> {user_email}</p>
-            <p><strong>First Name:</strong> {first_name}</p>
-            <p><strong>Last Name:</strong> {last_name}</p>
-            <p><strong>Paypal Email:</strong> {paypal_email}</p>
-            <PayPalButton price={price} sellerpaypalemail={paypal_email} buyer_id={buyerid} phone_sell_id={id} />
+
+            {store.token ? (
+                store.activeuserid === user.id ? null : 
+                store.allsold.some(item => item.phone_sell_id === id) ? (
+                    "Sold Out"
+                ) : store.cartdetails.some(item => item.phone_sell_id === id) ? (
+                    "Already added to cart"
+                ) : (
+                    <button 
+                        onClick={async () => {
+                            await actions.addToCart(store.activeuserid, id);
+                            await actions.getcart(store.activeuserid);
+                        }}
+                    >
+                        Add to Cart
+                    </button>
+                )
+            ) : (
+                <button 
+                    onClick={() => navigate('/login', { state: { from: window.location.pathname } })}
+                >
+                    Log in To Buy
+                </button>
+            )}
+        </>
+    );
+
+    if (!Array.isArray(image_url) || image_url.length === 0) {
+        return (
+            <div>
+                {renderPhoneDetails()}
+                <div>No images available for this phone.</div>
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            {renderPhoneDetails()}
             <div>
                 <h2>Images</h2>
                 {image_url.map((imageUrl, index) => (
-                    <img key={index} src={imageUrl} alt={`Image ${index + 1}`} style={{ maxWidth: '200px', maxHeight: '200px', margin: '10px' }} />
+                    <img
+                        key={index}
+                        src={imageUrl}
+                        alt={`Image ${index + 1}`}
+                        style={{ maxWidth: '200px', maxHeight: '200px', margin: '10px' }}
+                    />
                 ))}
             </div>
         </div>

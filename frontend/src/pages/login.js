@@ -1,10 +1,11 @@
 import React, { useState, useContext } from 'react';
 import { Context } from '../store/appContext';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Login = () => {
     const navigate = useNavigate();
     const { store, actions } = useContext(Context);
+    const location = useLocation();
     const [useremail, setuseremail] = useState('');
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
@@ -14,20 +15,19 @@ const Login = () => {
     const [passwordMatchError, setPasswordMatchError] = useState('');
     const [showForgotPassword, setShowForgotPassword] = useState(false);
     const [showResetPassword, setShowResetPassword] = useState(false);
-    const [loginError, setLoginError] = useState(null); // State for login error
+    const [loginError, setLoginError] = useState(null);
+
+    const redirectTo = location.state?.from || '/';
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         await actions.login(useremail, password);
         if (store.error) {
-            // Store the error message
             setLoginError(store.error);
-            // Reload the page on error
             window.location.reload();
         } else {
-            // Clear error and navigate upon successful login
             setLoginError(null);
-            navigate('/');
+            navigate(redirectTo);
         }
     };
 
