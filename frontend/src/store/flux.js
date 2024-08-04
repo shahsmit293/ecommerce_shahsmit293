@@ -55,8 +55,11 @@ const getState = ({ getStore, getActions, setStore }) => {
 
                     const response = await client.send(command);
                     const accessToken = response.AuthenticationResult.AccessToken;
-
-                    Cookies.set("accessToken", accessToken, { expires: 1 });
+                    Cookies.set("accessToken", accessToken, {
+                        expires: 1,       // Cookie expires in 1 day
+                        path: '/',        // Cookie is available throughout the site
+                        sameSite: 'Lax' // Adjust as needed for cross-origin requests
+                    });
                     setStore({ token: accessToken });
 
                     const user = await getActions().getUserAttributes(accessToken);
@@ -224,6 +227,7 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             addPhone: async (phoneDetails, images) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const formData = new FormData();
                     formData.append('phoneDetails', JSON.stringify(phoneDetails));
 
@@ -233,6 +237,9 @@ const getState = ({ getStore, getActions, setStore }) => {
 
                     const response = await fetch(`${backend}add_phone`, {
                         method: 'POST',
+                        headers: {
+                            Authorization: `Bearer ${accessToken}`
+                          },
                         body: formData,
                     });
 
@@ -253,10 +260,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             updatePrice : async (phoneid, newprice) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                   const response = await fetch(`${backend}edit_price`, {
                     method: 'PATCH',
                     headers: {
                       'Content-Type': 'application/json',
+                      Authorization: `Bearer ${accessToken}`
                     },
                     body: JSON.stringify({
                       phone_id: phoneid,
@@ -278,10 +287,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 
               updatePaypalEmail : async (phoneid, new_paypal_email) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                   const response = await fetch(`${backend}edit_paypalemail`, {
                     method: 'PATCH',
                     headers: {
                       'Content-Type': 'application/json',
+                      Authorization: `Bearer ${accessToken}`
                     },
                     body: JSON.stringify({
                       phone_id: phoneid,
@@ -351,10 +362,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             deletePhone: async (phone_id) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const response = await fetch(`${backend}deletephone`, {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
+                            Authorization: `Bearer ${accessToken}`
                         },
                         body: JSON.stringify({ phone_id }),
                     });
@@ -452,10 +465,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             addToCart: async (buyer_id, phone_sell_id) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const response = await fetch(`${backend}addcart`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            Authorization: `Bearer ${accessToken}`
                         },
                         body: JSON.stringify({
                             buyer_id,
@@ -478,10 +493,12 @@ const getState = ({ getStore, getActions, setStore }) => {
             
             getcart: async (buyer_id) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const response = await fetch(`${backend}getcart`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`
                         },
                         body: JSON.stringify({ buyer_id})
                     });
@@ -502,10 +519,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             deleteFromCart: async (buyer_id, phone_sell_id) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const response = await fetch(`${backend}deletecart`, {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
+                            Authorization: `Bearer ${accessToken}`
                         },
                         body: JSON.stringify({ buyer_id, phone_sell_id }),
                     });
@@ -525,10 +544,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             addToFavorite: async (buyer_id, phone_sell_id) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const response = await fetch(`${backend}addfavorite`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            Authorization: `Bearer ${accessToken}`
                         },
                         body: JSON.stringify({
                             buyer_id,
@@ -551,10 +572,12 @@ const getState = ({ getStore, getActions, setStore }) => {
             
             getFavorite: async (buyer_id) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const response = await fetch(`${backend}getfavorite`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`
                         },
                         body: JSON.stringify({ buyer_id})
                     });
@@ -575,10 +598,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             deleteFavorite: async (buyer_id, phone_sell_id) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const response = await fetch(`${backend}deletefavorite`, {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',
+                            Authorization: `Bearer ${accessToken}`
                         },
                         body: JSON.stringify({ buyer_id, phone_sell_id }),
                     });
@@ -598,10 +623,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             getPurchase: async (buyer_id) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const response = await fetch(`${backend}getpurchase`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`
                         },
                         body: JSON.stringify({ buyer_id})
                     });
@@ -622,10 +649,12 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             getSold: async (buyer_id) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const response = await fetch(`${backend}getsold`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`
                         },
                         body: JSON.stringify({ buyer_id})
                     });
@@ -693,10 +722,12 @@ const getState = ({ getStore, getActions, setStore }) => {
             
             getalllistingphone: async (sellerid) => {
                 try {
+                    const accessToken = Cookies.get("accessToken");
                     const response = await fetch(`${backend}getmylisting`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`
                         },
                         body: JSON.stringify({ sellerid})
                     });

@@ -37,11 +37,23 @@ cognito_client = boto3.client('cognito-idp', region_name=os.getenv("region"))
 def require_token(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        access_token = request.cookies.get('accessToken')
+        # Print the HTTP method of the request
+        print(f"HTTP Method: {request.method}")
+
+        if request.method == 'OPTIONS':
+            # Allow preflight requests
+            print("Preflight request detected. Allowing without token check.")
+            return func(*args, **kwargs)
+        
+        # Get the access token from cookies
+        access_token = request.headers.get('Authorization')
+        print(f"Access Token: {access_token}")
+
         if not access_token:
+            print("Access token not found.")
             return jsonify({"error": "Access token not found"}), 401
-        # Optionally, verify the token or decode it to extract more information if needed
         return func(*args, **kwargs)
+    
     return wrapper
 
 @api.route('/', methods=['GET'])
@@ -72,6 +84,9 @@ def confirm_signup():
 @api.route('/add_phone', methods=['POST', 'OPTIONS'])
 @cross_origin()
 def add_phone():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         body = request.form.get('phoneDetails')
         phoneDetails = json.loads(body)
@@ -132,6 +147,9 @@ def add_phone():
 @api.route('/edit_price', methods=['PATCH', 'OPTIONS'])
 @cross_origin()
 def edit_price():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         # Extract phone details from request body
         body = request.get_json()
@@ -158,6 +176,9 @@ def edit_price():
 @api.route('/edit_paypalemail', methods=['PATCH', 'OPTIONS'])
 @cross_origin()
 def edit_paypalemail():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         # Extract phone details from request body
         body = request.get_json()
@@ -213,6 +234,9 @@ def get_each_phone(sell_id):
 @api.route('/deletephone', methods=['DELETE'])
 @cross_origin()
 def delete_phone():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         data = request.json
         phone_id = data.get('phone_id')
@@ -317,7 +341,6 @@ def get_channels():
         
         # Extract channel objects from the response
         channels = response.get('channels', [])
-        print(channels)
         filtered_channels = []
         member_details = []
 
@@ -497,6 +520,9 @@ def error_page():
 @api.route('/addcart', methods=['POST'])
 @cross_origin() 
 def add_to_cart():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         data = request.json
         if 'buyer_id' not in data or 'phone_sell_id' not in data:
@@ -518,6 +544,9 @@ def add_to_cart():
 @api.route('/getcart', methods=['POST'])
 @cross_origin() 
 def get_cart():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         data = request.get_json()
         buyer_id = data.get('buyer_id')
@@ -536,6 +565,9 @@ def get_cart():
 @api.route('/deletecart', methods=['DELETE'])
 @cross_origin()
 def delete_from_cart():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         data = request.json
         buyer_id = data.get('buyer_id')
@@ -555,6 +587,9 @@ def delete_from_cart():
 @api.route('/addfavorite', methods=['POST'])
 @cross_origin() 
 def add_to_favorite():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         data = request.json
         if 'buyer_id' not in data or 'phone_sell_id' not in data:
@@ -576,6 +611,9 @@ def add_to_favorite():
 @api.route('/getfavorite', methods=['POST'])
 @cross_origin() 
 def get_favorite():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         data = request.get_json()
         buyer_id = data.get('buyer_id')
@@ -594,6 +632,9 @@ def get_favorite():
 @api.route('/deletefavorite', methods=['DELETE'])
 @cross_origin()
 def delete_favorite():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         data = request.json
         buyer_id = data.get('buyer_id')
@@ -613,6 +654,9 @@ def delete_favorite():
 @api.route('/getpurchase', methods=['POST'])
 @cross_origin() 
 def get_purchase():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         data = request.get_json()
         buyer_id = data.get('buyer_id')
@@ -631,6 +675,9 @@ def get_purchase():
 @api.route('/getsold', methods=['POST'])
 @cross_origin() 
 def get_sold():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         data = request.get_json()
         buyer_id = data.get('buyer_id')
@@ -699,6 +746,9 @@ def filter_phones():
 @api.route('/getmylisting', methods=['POST'])
 @cross_origin()
 def get_my_listing():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
     try:
         data = request.get_json()
         sellerid = data.get('sellerid')
