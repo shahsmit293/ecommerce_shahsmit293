@@ -344,21 +344,28 @@ const getState = ({ getStore, getActions, setStore }) => {
                             "Content-Type": "application/json",
                         }
                     });
-
+            
                     if (!response.ok) {
                         const errorData = await response.json();
-                        throw new Error(errorData.error || "Failed to fetch phones");
+                        throw new Error(errorData.error || "Failed to fetch phone");
                     }
-
+            
                     const data = await response.json();
-                    setStore({ each_phone: data });
-                    console.log("Fetched phones:", data);
-                    return data;
+            
+                    // Ensure the response is an object, not an array
+                    if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+                        setStore({ each_phone: data });
+                        console.log("Fetched phone:", data);
+                        return data;
+                    } else {
+                        throw new Error("Phone data is unavailable");
+                    }
                 } catch (error) {
-                    console.error("Error fetching phones:", error);
+                    console.error("Error fetching phone:", error);
                     throw error;
                 }
             },
+            
 
             deletePhone: async (phone_id) => {
                 try {

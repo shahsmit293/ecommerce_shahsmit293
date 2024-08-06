@@ -11,6 +11,7 @@ from uuid import uuid4
 from dotenv import load_dotenv
 from stream_chat import StreamChat
 import paypalrestsdk
+import redis
 api = Blueprint('api', __name__)
 load_dotenv()
 stream_chat_api_key = os.getenv("stream_chat_api_key")
@@ -28,6 +29,36 @@ session = boto3.Session(
                 region_name=os.getenv("region")
             )
 s3 = session.client('s3')
+
+redis_host = os.getenv("REDIS_HOST")
+redis_port = os.getenv("REDIS_PORT")
+redis_password = os.getenv("REDIS_PASSWORD")
+
+# Initialize Redis client
+redis_client = redis.StrictRedis(
+    host=redis_host,
+    port=redis_port,
+    password=redis_password,
+    ssl=True,
+    decode_responses=True
+)
+def cache_key(*args, **kwargs):
+    """ Generate a unique cache key based on request arguments. """
+    return json.dumps({'args': args, 'kwargs': kwargs})
+
+def cache_get(key):
+    """ Retrieve data from cache. """
+    return redis_client.get(key)
+
+def cache_set(key, value, timeout=300):
+    """ Store data in cache with expiration. """
+    redis_client.setex(key, timeout, value)
+
+def cache_delete(key):
+    """ Delete a key from cache. """
+    redis_client.delete(key)
+
+
 # Allow CORS requests to this API Blueprint
 CORS(api, supports_credentials=True, origins='*')  # Adjust origins as needed
 
@@ -81,6 +112,182 @@ def confirm_signup():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# @api.route('/add_phone', methods=['POST', 'OPTIONS'])
+# @cross_origin()
+# def add_phone():
+#     access_token = request.headers.get('Authorization')
+#     if not access_token:
+#         return jsonify({"error": "Access token not found"}), 401
+#     try:
+#         body = request.form.get('phoneDetails')
+#         phoneDetails = json.loads(body)
+        
+#         # Ensure user exists
+#         user_email = phoneDetails.get('user_email')
+#         user = User.query.filter_by(email=user_email).first()
+#         if not user:
+#             return jsonify({"error": "User not found"}), 404
+        
+#         # Get the last ID from Phones table
+#         last_phone = Phones.query.order_by(Phones.id.desc()).first()
+#         next_id = last_phone.id + 1 if last_phone else 1
+
+#         # Handle file uploads to S3 and store URLs in database
+#         folder_name = f"{user.id}_{secure_filename(user_email)}_sellerID_{next_id}"
+#         uploaded_files = []
+#         for file in request.files.getlist('images'):
+#             filename = secure_filename(file.filename)
+#             file_key = os.path.join(folder_name, filename)
+
+#             # Upload file to S3
+#             s3.upload_fileobj(file, os.getenv("s3_bucket_name"), file_key, ExtraArgs={'ContentType': file.content_type})
+
+#             # Form the URL for the uploaded file
+#             file_url = f"https://{s3_bucket_name}.s3.{region}.amazonaws.com/{file_key}"
+#             uploaded_files.append(file_url)
+        
+#         # Create new Phone instance and commit to database
+#         new_phone = Phones(
+#             price=phoneDetails['price'],
+#             phonetype=phoneDetails['phonetype'],
+#             color=phoneDetails['color'],
+#             storage=phoneDetails['storage'],
+#             carrier=phoneDetails['carrier'],
+#             model=phoneDetails['model'],
+#             condition=phoneDetails['condition'],
+#             seller=phoneDetails['seller'],
+#             location=phoneDetails['location'],
+#             IMEI=phoneDetails['IMEI'],
+#             user_email=user_email,
+#             image_url=uploaded_files,
+#             paypal_email=phoneDetails['paypal_email'],
+#             first_name=phoneDetails['first_name'],
+#             last_name=phoneDetails['last_name'],
+#             seller_contact_number=phoneDetails['seller_contact_number']
+#         )
+
+#         db.session.add(new_phone)
+#         db.session.commit()
+
+#         return jsonify({"message": "Phone added successfully", "phone": new_phone.serialize()}), 201
+
+#     except Exception as e:
+#         print(e)
+#         return jsonify({"error": "Failed to add phone"}), 500
+    
+# @api.route('/edit_price', methods=['PATCH', 'OPTIONS'])
+# @cross_origin()
+# def edit_price():
+#     access_token = request.headers.get('Authorization')
+#     if not access_token:
+#         return jsonify({"error": "Access token not found"}), 401
+#     try:
+#         # Extract phone details from request body
+#         body = request.get_json()
+#         phone_id = body.get('phone_id')
+#         new_price = body.get('new_price')
+
+#         if phone_id is None or new_price is None:
+#             return jsonify({"error": "Phone ID and new price must be provided"}), 400
+
+#         # Find the phone in the database
+#         phone = Phones.query.get(phone_id)
+#         if not phone:
+#             return jsonify({"error": "Phone not found"}), 404
+        
+#         phone.price = new_price
+
+#         db.session.commit()
+#         return jsonify({"message": "Price updated successfully", "phone": phone.serialize()}), 200
+
+#     except Exception as e:
+#         print(e)
+#         return jsonify({"error": "Failed to update price"}), 500
+
+# @api.route('/edit_paypalemail', methods=['PATCH', 'OPTIONS'])
+# @cross_origin()
+# def edit_paypalemail():
+#     access_token = request.headers.get('Authorization')
+#     if not access_token:
+#         return jsonify({"error": "Access token not found"}), 401
+#     try:
+#         # Extract phone details from request body
+#         body = request.get_json()
+#         phone_id = body.get('phone_id')
+#         new_paypal_email = body.get('new_paypal_email')
+
+#         if phone_id is None or new_paypal_email is None:
+#             return jsonify({"error": "Phone ID and  new paypalemail must be provided"}), 400
+
+#         # Find the phone in the database
+#         phone = Phones.query.get(phone_id)
+#         if not phone:
+#             return jsonify({"error": "Phone not found"}), 404
+        
+#         phone.paypal_email = new_paypal_email
+
+#         db.session.commit()
+#         return jsonify({"message": "Price updated successfully", "phone": phone.serialize()}), 200
+
+#     except Exception as e:
+#         print(e)
+#         return jsonify({"error": "Failed to update price"}), 500
+    
+# @api.route('/phones', methods=['GET'])
+# @cross_origin() 
+# def get_phones():
+#     try:
+#         # Query all phones from the database
+#         phones = Phones.query.all()
+
+#         # Serialize the list of phones to JSON
+#         phones_list = [phone.serialize() for phone in phones]
+
+#         return jsonify(phones_list), 200
+
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+# @api.route('/phones/<int:sell_id>', methods=['GET'])
+# @cross_origin() 
+# def get_each_phone(sell_id):
+#     try:
+#         phones = Phones.query.filter_by(id=sell_id)
+        
+#         # Serialize the list of phones to JSON
+#         phones_list = [phone.serialize() for phone in phones]
+
+#         return jsonify(phones_list), 200
+
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
+
+# @api.route('/deletephone', methods=['DELETE'])
+# @cross_origin()
+# def delete_phone():
+#     access_token = request.headers.get('Authorization')
+#     if not access_token:
+#         return jsonify({"error": "Access token not found"}), 401
+#     try:
+#         data = request.json
+#         phone_id = data.get('phone_id')
+
+#         if not phone_id:
+#             return jsonify({'error': 'phone_id not provided'}), 400
+
+#         phone_to_delete = Phones.query.filter_by(id=phone_id).first()
+
+#         if not phone_to_delete:
+#             return jsonify({'error': 'Phone not found'}), 404
+
+#         db.session.delete(phone_to_delete)
+#         db.session.commit()
+
+#         return jsonify({'message': f'Phone with id {phone_id} deleted successfully.'}), 200
+
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+    
 @api.route('/add_phone', methods=['POST', 'OPTIONS'])
 @cross_origin()
 def add_phone():
@@ -138,12 +345,17 @@ def add_phone():
         db.session.add(new_phone)
         db.session.commit()
 
+        # Invalidate cache for phones list
+        cache_delete('phones_list')
+        filter_keys = redis_client.keys(f'phone_filter:*')
+        if filter_keys:
+            redis_client.delete(*filter_keys)
         return jsonify({"message": "Phone added successfully", "phone": new_phone.serialize()}), 201
 
     except Exception as e:
         print(e)
         return jsonify({"error": "Failed to add phone"}), 500
-    
+
 @api.route('/edit_price', methods=['PATCH', 'OPTIONS'])
 @cross_origin()
 def edit_price():
@@ -151,7 +363,6 @@ def edit_price():
     if not access_token:
         return jsonify({"error": "Access token not found"}), 401
     try:
-        # Extract phone details from request body
         body = request.get_json()
         phone_id = body.get('phone_id')
         new_price = body.get('new_price')
@@ -159,14 +370,18 @@ def edit_price():
         if phone_id is None or new_price is None:
             return jsonify({"error": "Phone ID and new price must be provided"}), 400
 
-        # Find the phone in the database
         phone = Phones.query.get(phone_id)
         if not phone:
             return jsonify({"error": "Phone not found"}), 404
         
         phone.price = new_price
-
         db.session.commit()
+
+        # Invalidate cache for the specific phone
+        cache_delete(f'phone_{phone_id}')
+        # Invalidate the phones list cache
+        cache_delete('phones_list')
+
         return jsonify({"message": "Price updated successfully", "phone": phone.serialize()}), 200
 
     except Exception as e:
@@ -180,37 +395,44 @@ def edit_paypalemail():
     if not access_token:
         return jsonify({"error": "Access token not found"}), 401
     try:
-        # Extract phone details from request body
         body = request.get_json()
         phone_id = body.get('phone_id')
         new_paypal_email = body.get('new_paypal_email')
 
         if phone_id is None or new_paypal_email is None:
-            return jsonify({"error": "Phone ID and  new paypalemail must be provided"}), 400
+            return jsonify({"error": "Phone ID and new paypalemail must be provided"}), 400
 
-        # Find the phone in the database
         phone = Phones.query.get(phone_id)
         if not phone:
             return jsonify({"error": "Phone not found"}), 404
         
         phone.paypal_email = new_paypal_email
-
         db.session.commit()
-        return jsonify({"message": "Price updated successfully", "phone": phone.serialize()}), 200
+
+        # Invalidate cache for the specific phone
+        cache_delete(f'phone_{phone_id}')
+        # Invalidate the phones list cache
+        cache_delete('phones_list')
+
+        return jsonify({"message": "Paypal email updated successfully", "phone": phone.serialize()}), 200
 
     except Exception as e:
         print(e)
-        return jsonify({"error": "Failed to update price"}), 500
-    
+        return jsonify({"error": "Failed to update paypal email"}), 500
+
 @api.route('/phones', methods=['GET'])
-@cross_origin() 
+@cross_origin()
 def get_phones():
     try:
-        # Query all phones from the database
-        phones = Phones.query.all()
+        cache_key = 'phones_list'
+        cached_data = cache_get(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
 
-        # Serialize the list of phones to JSON
+        phones = Phones.query.all()
         phones_list = [phone.serialize() for phone in phones]
+
+        cache_set(cache_key, json.dumps(phones_list))
 
         return jsonify(phones_list), 200
 
@@ -218,15 +440,22 @@ def get_phones():
         return jsonify({"error": str(e)}), 500
 
 @api.route('/phones/<int:sell_id>', methods=['GET'])
-@cross_origin() 
+@cross_origin()
 def get_each_phone(sell_id):
     try:
-        phones = Phones.query.filter_by(id=sell_id)
-        
-        # Serialize the list of phones to JSON
-        phones_list = [phone.serialize() for phone in phones]
+        cache_key = f'phone_{sell_id}'
+        cached_data = cache_get(cache_key)
+        if cached_data:
+            return jsonify(json.loads(cached_data)), 200
 
-        return jsonify(phones_list), 200
+        phone = Phones.query.get(sell_id)
+        if not phone:
+            return jsonify({"error": "Phone not found"}), 404
+
+        phone_data = phone.serialize()
+        cache_set(cache_key, json.dumps(phone_data))
+
+        return jsonify(phone_data), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -249,15 +478,30 @@ def delete_phone():
         if not phone_to_delete:
             return jsonify({'error': 'Phone not found'}), 404
 
+        # Remove phone from all users' favorites in the database
+        Favorite.query.filter_by(phone_sell_id=phone_id).delete()
+        Cart.query.filter_by(phone_sell_id=phone_id).delete()
+        # Commit changes to the database
         db.session.delete(phone_to_delete)
         db.session.commit()
+
+        redis_client.delete("phones_list")
+        # Remove all related entries from Redis cache
+        favorite_keys = redis_client.keys(f'favorite:*:{phone_id}')
+        if favorite_keys:
+            redis_client.delete(*favorite_keys)
+        
+        # Remove all related entries from Redis cache
+        cart_keys = redis_client.keys(f'cart:*:{phone_id}')
+        if cart_keys:
+            redis_client.delete(*cart_keys)
+        
 
         return jsonify({'message': f'Phone with id {phone_id} deleted successfully.'}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-
 @api.route('/get_stream_token', methods=['POST'])
 def get_stream_token():
     data = request.get_json()
@@ -447,7 +691,8 @@ def payment_success():
     data = request.get_json()
     payment_id = data.get('paymentId')
     payer_id = data.get('payerId')
-    address=data.get('address')
+    address = data.get('address')
+    
     if not payment_id or not payer_id:
         return jsonify({'error': 'Missing paymentId or PayerID'}), 400
 
@@ -467,8 +712,11 @@ def payment_success():
             phone_sell_id = custom_data.get('phone_sell_id')
             seller_id = custom_data.get('seller_id')
 
+            # Create the payout
             payout_result = create_payout(sellerpaypalemail, payout_amount)
-            payout_transaction_id=payout_result.get('payout_batch_id')
+            payout_transaction_id = payout_result.get('payout_batch_id')
+
+            # Record the transaction in the database
             new_transaction = Transaction(
                 buyer_id=buyer_id,
                 seller_id=seller_id,
@@ -481,11 +729,20 @@ def payment_success():
             )
             db.session.add(new_transaction)
             db.session.commit()
-            # Now delete the item from the cart
-            item_to_delete = Cart.query.filter_by(buyer_id=buyer_id, phone_sell_id=phone_sell_id).first()
-            if item_to_delete:
-                db.session.delete(item_to_delete)
-                db.session.commit()  # Commit this specific operation
+
+            # Now delete the items from the cart
+            items_to_delete = Cart.query.filter_by(phone_sell_id=phone_sell_id).all()
+
+            redis_client.delete('all_sold_items')
+            # Remove all related entries from Redis cache
+            cart_keys = redis_client.keys(f'cart:*:{phone_sell_id}')
+            if cart_keys:
+                redis_client.delete(*cart_keys)
+            
+            if items_to_delete:
+                for item in items_to_delete:
+                    db.session.delete(item)
+                db.session.commit()
             else:
                 return jsonify({'error': 'Item not found in cart'}), 404
 
@@ -495,6 +752,7 @@ def payment_success():
 
     except Exception as e:
         return jsonify({'status': 'Payment error', 'error': str(e)}), 500
+
 
 
 @api.route('/get-payment-details', methods=['GET'])
@@ -517,8 +775,74 @@ def get_payment_details():
 def error_page():
     return "Payment error."
 
+# @api.route('/addcart', methods=['POST'])
+# @cross_origin() 
+# def add_to_cart():
+#     access_token = request.headers.get('Authorization')
+#     if not access_token:
+#         return jsonify({"error": "Access token not found"}), 401
+#     try:
+#         data = request.json
+#         if 'buyer_id' not in data or 'phone_sell_id' not in data:
+#             return jsonify({'error': 'Missing buyer_id or phone_sell_id'}), 400
+
+#         buyer_id = data['buyer_id']
+#         phone_sell_id = data['phone_sell_id']
+        
+#         new_cart_item = Cart(buyer_id=buyer_id, phone_sell_id=phone_sell_id)
+        
+#         db.session.add(new_cart_item)
+#         db.session.commit()
+        
+#         return jsonify({'message': 'Cart item added successfully', 'cart': new_cart_item.serialize()}), 201
+    
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+    
+# @api.route('/getcart', methods=['POST'])
+# @cross_origin() 
+# def get_cart():
+#     access_token = request.headers.get('Authorization')
+#     if not access_token:
+#         return jsonify({"error": "Access token not found"}), 401
+#     try:
+#         data = request.get_json()
+#         buyer_id = data.get('buyer_id')
+
+#         if not buyer_id:
+#             return jsonify({"success": False, "error": "buyer_id is required"}), 400
+
+#         cart_entries = Cart.query.filter_by(buyer_id=buyer_id).all()
+        
+#         cart_data = [cart.serialize() for cart in cart_entries if cart.phone]
+        
+#         return jsonify({"success": True, "phones": cart_data}), 200
+#     except Exception as e:
+#         return jsonify({"success": False, "error": str(e)}), 500
+
+# @api.route('/deletecart', methods=['DELETE'])
+# @cross_origin()
+# def delete_from_cart():
+#     access_token = request.headers.get('Authorization')
+#     if not access_token:
+#         return jsonify({"error": "Access token not found"}), 401
+#     try:
+#         data = request.json
+#         buyer_id = data.get('buyer_id')
+#         phone_sell_id = data.get('phone_sell_id')
+        
+#         item_to_delete = Cart.query.filter_by(buyer_id=buyer_id, phone_sell_id=phone_sell_id).first()
+
+#         if not item_to_delete:
+#             return jsonify({'error': 'Item not found in cart'}), 404
+
+#         db.session.delete(item_to_delete)
+#         db.session.commit()
+#         return jsonify({'message': 'Item deleted successfully'}), 200
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
 @api.route('/addcart', methods=['POST'])
-@cross_origin() 
+@cross_origin()
 def add_to_cart():
     access_token = request.headers.get('Authorization')
     if not access_token:
@@ -531,18 +855,30 @@ def add_to_cart():
         buyer_id = data['buyer_id']
         phone_sell_id = data['phone_sell_id']
         
+        # Redis key for cart
+        cart_key = f'cart:{buyer_id}:{phone_sell_id}'
+
+        # Check if the cart item already exists in Redis
+        if redis_client.exists(cart_key):
+            return jsonify({'message': 'Cart item already exists', 'cart': json.loads(redis_client.get(cart_key))}), 200
+
+        # Add new cart item to the database
         new_cart_item = Cart(buyer_id=buyer_id, phone_sell_id=phone_sell_id)
-        
         db.session.add(new_cart_item)
         db.session.commit()
-        
-        return jsonify({'message': 'Cart item added successfully', 'cart': new_cart_item.serialize()}), 201
-    
+
+        # Cache the new cart item in Redis
+        serialized_data = new_cart_item.serialize()
+        redis_client.set(cart_key, json.dumps(serialized_data))
+
+        return jsonify({'message': 'Cart item added successfully', 'cart': serialized_data}), 201
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
+
 @api.route('/getcart', methods=['POST'])
-@cross_origin() 
+@cross_origin()
 def get_cart():
     access_token = request.headers.get('Authorization')
     if not access_token:
@@ -554,13 +890,25 @@ def get_cart():
         if not buyer_id:
             return jsonify({"success": False, "error": "buyer_id is required"}), 400
 
-        cart_entries = Cart.query.filter_by(buyer_id=buyer_id).all()
-        
-        cart_data = [cart.serialize() for cart in cart_entries if cart.phone]
-        
+        # Fetch all cart items for the buyer from Redis
+        cart_keys = redis_client.keys(f'cart:{buyer_id}:*')
+        cart_data = [json.loads(redis_client.get(key)) for key in cart_keys if redis_client.get(key)]
+        print(cart_data)
+
+        if not cart_data:  # If no data in Redis, fetch from DB
+            cart_entries = Cart.query.filter_by(buyer_id=buyer_id).all()
+            cart_data = [cart.serialize() for cart in cart_entries if cart.phone]
+
+            # Cache each cart item in Redis
+            for item in cart_data:
+                cart_key = f'cart:{buyer_id}:{item["phone_sell_id"]}'
+                redis_client.set(cart_key, json.dumps(item))
+
         return jsonify({"success": True, "phones": cart_data}), 200
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 @api.route('/deletecart', methods=['DELETE'])
 @cross_origin()
@@ -572,20 +920,93 @@ def delete_from_cart():
         data = request.json
         buyer_id = data.get('buyer_id')
         phone_sell_id = data.get('phone_sell_id')
-        
+
         item_to_delete = Cart.query.filter_by(buyer_id=buyer_id, phone_sell_id=phone_sell_id).first()
 
         if not item_to_delete:
             return jsonify({'error': 'Item not found in cart'}), 404
 
+        # Delete the item from the database
         db.session.delete(item_to_delete)
         db.session.commit()
+
+        # Invalidate the cache in Redis
+        cart_key = f'cart:{buyer_id}:{phone_sell_id}'
+        redis_client.delete(cart_key)
+
         return jsonify({'message': 'Item deleted successfully'}), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+# @api.route('/addfavorite', methods=['POST'])
+# @cross_origin() 
+# def add_to_favorite():
+#     access_token = request.headers.get('Authorization')
+#     if not access_token:
+#         return jsonify({"error": "Access token not found"}), 401
+#     try:
+#         data = request.json
+#         if 'buyer_id' not in data or 'phone_sell_id' not in data:
+#             return jsonify({'error': 'Missing buyer_id or phone_sell_id'}), 400
+
+#         buyer_id = data['buyer_id']
+#         phone_sell_id = data['phone_sell_id']
+        
+#         new_favorite_item = Favorite(buyer_id=buyer_id, phone_sell_id=phone_sell_id)
+        
+#         db.session.add(new_favorite_item)
+#         db.session.commit()
+        
+#         return jsonify({'message': 'Favorite item added successfully', 'favorite': new_favorite_item.serialize()}), 201
+    
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+
+# @api.route('/getfavorite', methods=['POST'])
+# @cross_origin() 
+# def get_favorite():
+#     access_token = request.headers.get('Authorization')
+#     if not access_token:
+#         return jsonify({"error": "Access token not found"}), 401
+#     try:
+#         data = request.get_json()
+#         buyer_id = data.get('buyer_id')
+
+#         if not buyer_id:
+#             return jsonify({"success": False, "error": "buyer_id is required"}), 400
+
+#         favorite_entries = Favorite.query.filter_by(buyer_id=buyer_id).all()
+        
+#         favorite_data = [item.serialize() for item in favorite_entries if item.phone]
+        
+#         return jsonify({"success": True, "phones": favorite_data}), 200
+#     except Exception as e:
+#         return jsonify({"success": False, "error": str(e)}), 500
+
+# @api.route('/deletefavorite', methods=['DELETE'])
+# @cross_origin()
+# def delete_favorite():
+#     access_token = request.headers.get('Authorization')
+#     if not access_token:
+#         return jsonify({"error": "Access token not found"}), 401
+#     try:
+#         data = request.json
+#         buyer_id = data.get('buyer_id')
+#         phone_sell_id = data.get('phone_sell_id')
+        
+#         item_to_delete = Favorite.query.filter_by(buyer_id=buyer_id, phone_sell_id=phone_sell_id).first()
+
+#         if not item_to_delete:
+#             return jsonify({'error': 'Item not found in cart'}), 404
+
+#         db.session.delete(item_to_delete)
+#         db.session.commit()
+#         return jsonify({'message': 'Item deleted successfully'}), 200
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
 
 @api.route('/addfavorite', methods=['POST'])
-@cross_origin() 
+@cross_origin()
 def add_to_favorite():
     access_token = request.headers.get('Authorization')
     if not access_token:
@@ -597,19 +1018,28 @@ def add_to_favorite():
 
         buyer_id = data['buyer_id']
         phone_sell_id = data['phone_sell_id']
-        
+
+        # Check if favorite already exists in Redis
+        favorite_key = f'favorite:{buyer_id}:{phone_sell_id}'
+        if redis_client.exists(favorite_key):
+            return jsonify({'message': 'Favorite item already exists', 'favorite': json.loads(redis_client.get(favorite_key))}), 200
+
+        # Add new favorite item to the database
         new_favorite_item = Favorite(buyer_id=buyer_id, phone_sell_id=phone_sell_id)
-        
         db.session.add(new_favorite_item)
         db.session.commit()
-        
-        return jsonify({'message': 'Favorite item added successfully', 'favorite': new_favorite_item.serialize()}), 201
-    
+
+        # Cache the new favorite item in Redis
+        serialized_data = new_favorite_item.serialize()
+        redis_client.set(favorite_key, json.dumps(serialized_data))
+
+        return jsonify({'message': 'Favorite item added successfully', 'favorite': serialized_data}), 201
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @api.route('/getfavorite', methods=['POST'])
-@cross_origin() 
+@cross_origin()
 def get_favorite():
     access_token = request.headers.get('Authorization')
     if not access_token:
@@ -621,11 +1051,28 @@ def get_favorite():
         if not buyer_id:
             return jsonify({"success": False, "error": "buyer_id is required"}), 400
 
-        favorite_entries = Favorite.query.filter_by(buyer_id=buyer_id).all()
-        
-        favorite_data = [item.serialize() for item in favorite_entries if item.phone]
-        
+        # Check Redis cache for favorite entries
+        favorite_keys = redis_client.keys(f'favorite:{buyer_id}:*')
+        favorite_data = []
+
+        for key in favorite_keys:
+            favorite_entry = redis_client.get(key)
+            if favorite_entry:
+                favorite_data.append(json.loads(favorite_entry))
+        print(favorite_data)
+
+        if not favorite_data:
+            # If not found in cache, query the database
+            favorite_entries = Favorite.query.filter_by(buyer_id=buyer_id).all()
+            favorite_data = [item.serialize() for item in favorite_entries if item.phone]
+
+            # Cache the retrieved favorite entries in Redis
+            for item in favorite_entries:
+                favorite_key = f'favorite:{buyer_id}:{item.phone_sell_id}'
+                redis_client.set(favorite_key, json.dumps(item.serialize()))
+
         return jsonify({"success": True, "phones": favorite_data}), 200
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -639,15 +1086,21 @@ def delete_favorite():
         data = request.json
         buyer_id = data.get('buyer_id')
         phone_sell_id = data.get('phone_sell_id')
-        
+
         item_to_delete = Favorite.query.filter_by(buyer_id=buyer_id, phone_sell_id=phone_sell_id).first()
 
         if not item_to_delete:
-            return jsonify({'error': 'Item not found in cart'}), 404
+            return jsonify({'error': 'Item not found in favorites'}), 404
 
         db.session.delete(item_to_delete)
         db.session.commit()
-        return jsonify({'message': 'Item deleted successfully'}), 200
+
+        # Remove the favorite item from Redis cache
+        favorite_key = f'favorite:{buyer_id}:{phone_sell_id}'
+        redis_client.delete(favorite_key)
+
+        return jsonify({'message': 'Favorite item deleted successfully'}), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -693,17 +1146,82 @@ def get_sold():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+# @api.route('/getallsold', methods=['GET'])
+# @cross_origin()
+# def get_all_sold():
+#     try:
+#         all_sold = Transaction.query.all()
+
+#         all_sold_data = [item.serialize() for item in all_sold if item.phone]
+
+#         return jsonify({"success": True, "allsoldphones": all_sold_data}), 200
+#     except Exception as e:
+#         return jsonify({"success": False, "error": str(e)}), 500
+
 @api.route('/getallsold', methods=['GET'])
 @cross_origin()
 def get_all_sold():
     try:
+        # Generate a cache key for the all-sold items
+        cache_key = 'all_sold_items'
+        
+        # Try to get data from cache
+        cached_data = cache_get(cache_key)
+        if cached_data:
+            print(cached_data)
+            return jsonify({"success": True, "allsoldphones": json.loads(cached_data)}), 200
+
+        # If not in cache, query the database
         all_sold = Transaction.query.all()
 
+        # Serialize the data
         all_sold_data = [item.serialize() for item in all_sold if item.phone]
 
+        # Cache the data with an expiration time (e.g., 5 minutes)
+        cache_set(cache_key, json.dumps(all_sold_data), timeout=300)
+
         return jsonify({"success": True, "allsoldphones": all_sold_data}), 200
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+# @api.route('/filter-phones', methods=['GET'])
+# def filter_phones():
+#     phonetype = request.args.get('phonetype', '')
+#     color = request.args.get('color', '')
+#     storage = request.args.get('storage', '')
+#     carrier = request.args.get('carrier', '')
+#     model = request.args.get('model', '')
+
+#     # Start with a query on the Phones model
+#     query = Phones.query
+
+#     # Check if any filters are applied; if not, fetch all phones
+#     if not (phonetype or color or storage or carrier or model):
+#         all_phones = query.all()
+#         # Extract phone IDs
+#         phones = [phone.serialize() for phone in all_phones]
+#         return jsonify({"phones": phones, "message": "No filters applied, returning all phones."})
+
+#     # Apply filtering conditions if parameters are provided
+#     if phonetype:
+#         query = query.filter(Phones.phonetype.ilike(f"%{phonetype}%"))
+#     if color:
+#         query = query.filter(Phones.color.ilike(f"%{color}%"))
+#     if storage:
+#         query = query.filter(Phones.storage.ilike(f"%{storage}%"))
+#     if carrier:
+#         query = query.filter(Phones.carrier.ilike(f"%{carrier}%"))
+#     if model:
+#         query = query.filter(Phones.model.ilike(f"%{model}%"))
+
+#     # Execute the query and get the filtered phones
+#     filtered_phones = query.all()
+
+#     # Extract IDs
+#     phones = [phone.serialize() for phone in filtered_phones]
+
+#     return jsonify({"phones": phones, "message": "Filtered phones based on criteria."})
 
 @api.route('/filter-phones', methods=['GET'])
 def filter_phones():
@@ -713,14 +1231,37 @@ def filter_phones():
     carrier = request.args.get('carrier', '')
     model = request.args.get('model', '')
 
+    # Generate a unique cache key based on the filter parameters
+    prefix = 'phone_filter:'  # Define a prefix manually
+    cache_key_str = prefix + cache_key(
+        phonetype=phonetype,
+        color=color,
+        storage=storage,
+        carrier=carrier,
+        model=model
+    )
+    
+    # Convert cache_key_str to a string if necessary
+    if isinstance(cache_key_str, bytes):
+        cache_key_str = cache_key_str.decode('utf-8')
+    
+    # Try to get data from cache
+    cached_data = cache_get(cache_key_str)
+    if cached_data:
+        print(cached_data)
+        return jsonify({"phones": json.loads(cached_data), "message": "Filtered phones fetched from cache."}), 200
+
     # Start with a query on the Phones model
     query = Phones.query
 
     # Check if any filters are applied; if not, fetch all phones
     if not (phonetype or color or storage or carrier or model):
         all_phones = query.all()
-        # Extract phone IDs
         phones = [phone.serialize() for phone in all_phones]
+        
+        # Cache the result if no filters are applied
+        cache_set(cache_key_str, json.dumps(phones), timeout=300)
+        
         return jsonify({"phones": phones, "message": "No filters applied, returning all phones."})
 
     # Apply filtering conditions if parameters are provided
@@ -737,11 +1278,12 @@ def filter_phones():
 
     # Execute the query and get the filtered phones
     filtered_phones = query.all()
-
-    # Extract IDs
     phones = [phone.serialize() for phone in filtered_phones]
 
-    return jsonify({"phones": phones, "message": "Filtered phones based on criteria."})
+    # Cache the result
+    cache_set(cache_key_str, json.dumps(phones), timeout=300)
+
+    return jsonify({"phones": phones, "message": "Filtered phones based on criteria."}), 200
 
 @api.route('/getmylisting', methods=['POST'])
 @cross_origin()

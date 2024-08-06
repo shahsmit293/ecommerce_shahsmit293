@@ -54,7 +54,7 @@ const ViewEachPhone = () => {
         last_name,
         paypal_email,
         user
-    } = store.each_phone[0];
+    } = store.each_phone;
 
     const renderPhoneDetails = () => (
         <>
