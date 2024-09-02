@@ -1,7 +1,7 @@
 import React from 'react';
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
-const PayPalButton = ({ price, sellerpaypalemail, buyer_id, phone_sell_id,seller_id}) => {
+const PayPalButton = ({ price, sellerpaypalemail, buyer_id, phone_sell_id,seller_id,seller_email,buyer_email}) => {
     const currency = "USD";
     const backend = process.env.REACT_APP_FLASK_BACKEND_URL;
 
@@ -13,7 +13,7 @@ const PayPalButton = ({ price, sellerpaypalemail, buyer_id, phone_sell_id,seller
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ price, sellerpaypalemail, buyer_id, phone_sell_id , seller_id})
+                body: JSON.stringify({ price, sellerpaypalemail, buyer_id, phone_sell_id , seller_id, seller_email, buyer_email})
             });
             const orderData = await response.json();
 

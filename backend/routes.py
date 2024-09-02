@@ -12,6 +12,9 @@ from dotenv import load_dotenv
 from stream_chat import StreamChat
 import paypalrestsdk
 import redis
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 api = Blueprint('api', __name__)
 load_dotenv()
 stream_chat_api_key = os.getenv("stream_chat_api_key")
@@ -34,6 +37,16 @@ redis_host = os.getenv("REDIS_HOST")
 redis_port = os.getenv("REDIS_PORT")
 redis_password = os.getenv("REDIS_PASSWORD")
 
+# AWS SNS configuration
+sns_client = boto3.client('sns', region_name=os.getenv('region'))
+buyer_sns_topic_arn = os.getenv('SNS_TOPIC_BUYER_ARN')
+seller_sns_topic_arn = os.getenv('SNS_TOPIC_SELLER_ARN')
+
+# AWS SQS configuration
+sqs_client = boto3.client('sqs', region_name=os.getenv('region'))
+buyer_sqs_queue_url = os.getenv('SQS_BUYER_URL')
+seller_sqs_queue_url = os.getenv('SQS_SELLER_URL')
+
 # Initialize Redis client
 redis_client = redis.StrictRedis(
     host=redis_host,
@@ -42,6 +55,14 @@ redis_client = redis.StrictRedis(
     ssl=True,
     decode_responses=True
 )
+
+# redis_client = redis.StrictRedis(
+#     host=redis_host,
+#     port=redis_port,
+#     password=redis_password if redis_password != "None" else None,
+#     decode_responses=True
+# )
+
 def cache_key(*args, **kwargs):
     """ Generate a unique cache key based on request arguments. """
     return json.dumps({'args': args, 'kwargs': kwargs})
@@ -75,7 +96,7 @@ def require_token(func):
             # Allow preflight requests
             print("Preflight request detected. Allowing without token check.")
             return func(*args, **kwargs)
-        
+
         # Get the access token from cookies
         access_token = request.headers.get('Authorization')
         print(f"Access Token: {access_token}")
@@ -84,7 +105,7 @@ def require_token(func):
             print("Access token not found.")
             return jsonify({"error": "Access token not found"}), 401
         return func(*args, **kwargs)
-    
+
     return wrapper
 
 @api.route('/', methods=['GET'])
@@ -121,13 +142,13 @@ def confirm_signup():
 #     try:
 #         body = request.form.get('phoneDetails')
 #         phoneDetails = json.loads(body)
-        
+
 #         # Ensure user exists
 #         user_email = phoneDetails.get('user_email')
 #         user = User.query.filter_by(email=user_email).first()
 #         if not user:
 #             return jsonify({"error": "User not found"}), 404
-        
+
 #         # Get the last ID from Phones table
 #         last_phone = Phones.query.order_by(Phones.id.desc()).first()
 #         next_id = last_phone.id + 1 if last_phone else 1
@@ -145,7 +166,7 @@ def confirm_signup():
 #             # Form the URL for the uploaded file
 #             file_url = f"https://{s3_bucket_name}.s3.{region}.amazonaws.com/{file_key}"
 #             uploaded_files.append(file_url)
-        
+
 #         # Create new Phone instance and commit to database
 #         new_phone = Phones(
 #             price=phoneDetails['price'],
@@ -174,7 +195,7 @@ def confirm_signup():
 #     except Exception as e:
 #         print(e)
 #         return jsonify({"error": "Failed to add phone"}), 500
-    
+
 # @api.route('/edit_price', methods=['PATCH', 'OPTIONS'])
 # @cross_origin()
 # def edit_price():
@@ -194,7 +215,7 @@ def confirm_signup():
 #         phone = Phones.query.get(phone_id)
 #         if not phone:
 #             return jsonify({"error": "Phone not found"}), 404
-        
+
 #         phone.price = new_price
 
 #         db.session.commit()
@@ -223,7 +244,7 @@ def confirm_signup():
 #         phone = Phones.query.get(phone_id)
 #         if not phone:
 #             return jsonify({"error": "Phone not found"}), 404
-        
+
 #         phone.paypal_email = new_paypal_email
 
 #         db.session.commit()
@@ -232,9 +253,9 @@ def confirm_signup():
 #     except Exception as e:
 #         print(e)
 #         return jsonify({"error": "Failed to update price"}), 500
-    
+
 # @api.route('/phones', methods=['GET'])
-# @cross_origin() 
+# @cross_origin()
 # def get_phones():
 #     try:
 #         # Query all phones from the database
@@ -249,11 +270,11 @@ def confirm_signup():
 #         return jsonify({"error": str(e)}), 500
 
 # @api.route('/phones/<int:sell_id>', methods=['GET'])
-# @cross_origin() 
+# @cross_origin()
 # def get_each_phone(sell_id):
 #     try:
 #         phones = Phones.query.filter_by(id=sell_id)
-        
+
 #         # Serialize the list of phones to JSON
 #         phones_list = [phone.serialize() for phone in phones]
 
@@ -287,7 +308,7 @@ def confirm_signup():
 
 #     except Exception as e:
 #         return jsonify({'error': str(e)}), 500
-    
+
 @api.route('/add_phone', methods=['POST', 'OPTIONS'])
 @cross_origin()
 def add_phone():
@@ -297,13 +318,13 @@ def add_phone():
     try:
         body = request.form.get('phoneDetails')
         phoneDetails = json.loads(body)
-        
+
         # Ensure user exists
         user_email = phoneDetails.get('user_email')
         user = User.query.filter_by(email=user_email).first()
         if not user:
             return jsonify({"error": "User not found"}), 404
-        
+
         # Get the last ID from Phones table
         last_phone = Phones.query.order_by(Phones.id.desc()).first()
         next_id = last_phone.id + 1 if last_phone else 1
@@ -321,7 +342,7 @@ def add_phone():
             # Form the URL for the uploaded file
             file_url = f"https://{s3_bucket_name}.s3.{region}.amazonaws.com/{file_key}"
             uploaded_files.append(file_url)
-        
+
         # Create new Phone instance and commit to database
         new_phone = Phones(
             price=phoneDetails['price'],
@@ -373,7 +394,7 @@ def edit_price():
         phone = Phones.query.get(phone_id)
         if not phone:
             return jsonify({"error": "Phone not found"}), 404
-        
+
         phone.price = new_price
         db.session.commit()
 
@@ -405,7 +426,7 @@ def edit_paypalemail():
         phone = Phones.query.get(phone_id)
         if not phone:
             return jsonify({"error": "Phone not found"}), 404
-        
+
         phone.paypal_email = new_paypal_email
         db.session.commit()
 
@@ -490,18 +511,18 @@ def delete_phone():
         favorite_keys = redis_client.keys(f'favorite:*:{phone_id}')
         if favorite_keys:
             redis_client.delete(*favorite_keys)
-        
+
         # Remove all related entries from Redis cache
         cart_keys = redis_client.keys(f'cart:*:{phone_id}')
         if cart_keys:
             redis_client.delete(*cart_keys)
-        
+
 
         return jsonify({'message': f'Phone with id {phone_id} deleted successfully.'}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
 @api.route('/get_stream_token', methods=['POST'])
 def get_stream_token():
     data = request.get_json()
@@ -582,7 +603,7 @@ def get_channels():
             'type': 'messaging',
             'members': { '$in': [str(activeuserid)] }
         })
-        
+
         # Extract channel objects from the response
         channels = response.get('channels', [])
         filtered_channels = []
@@ -618,15 +639,19 @@ def create_payment():
     phone_sell_id=data.get('phone_sell_id')
     seller_id=data.get('seller_id')
     currency = "USD"  # Fixed currency
+    seller_email=data.get('seller_email')
+    buyer_email=data.get('buyer_email')
 
     if not price:
         return jsonify({'error': 'Price is required'}), 400
-    
+
     custom_data = {
         "sellerpaypalemail": sellerpaypalemail,
         "buyer_id": buyer_id,
         "phone_sell_id": phone_sell_id,
-        "seller_id": seller_id
+        "seller_id": seller_id,
+        "seller_email":seller_email,
+        "buyer_email":buyer_email
     }
     payment = paypalrestsdk.Payment({
         "intent": "sale",
@@ -686,13 +711,157 @@ def create_payout(sellerpaypalemail, amount):
         return {'error': payout.error}
 
 
+# @api.route('/payment-success', methods=['POST'])
+# def payment_success():
+#     data = request.get_json()
+#     payment_id = data.get('paymentId')
+#     payer_id = data.get('payerId')
+#     address = data.get('address')
+
+#     if not payment_id or not payer_id:
+#         return jsonify({'error': 'Missing paymentId or PayerID'}), 400
+
+#     payment = paypalrestsdk.Payment.find(payment_id)
+
+#     try:
+#         if payment.execute({"payer_id": payer_id}):
+#             payment_transaction_id = payment.transactions[0].related_resources[0].sale.id
+
+#             payment_amount = float(payment.transactions[0].amount.total)
+#             payout_amount = payment_amount - 10
+
+#             custom_data = json.loads(payment.transactions[0].custom)
+
+#             sellerpaypalemail = custom_data.get('sellerpaypalemail')
+#             buyer_id = custom_data.get('buyer_id')
+#             phone_sell_id = custom_data.get('phone_sell_id')
+#             seller_id = custom_data.get('seller_id')
+
+#             # Create the payout
+#             payout_result = create_payout(sellerpaypalemail, payout_amount)
+#             payout_transaction_id = payout_result.get('payout_batch_id')
+
+#             # Record the transaction in the database
+#             new_transaction = Transaction(
+#                 buyer_id=buyer_id,
+#                 seller_id=seller_id,
+#                 phone_sell_id=phone_sell_id,
+#                 payment_amount=payment_amount,
+#                 payout_amount=payout_amount,
+#                 shipping_address=address,
+#                 payment_transaction_id=payment_transaction_id,
+#                 payout_transaction_id=payout_transaction_id
+#             )
+#             db.session.add(new_transaction)
+#             db.session.commit()
+
+#             # Now delete the items from the cart
+#             items_to_delete = Cart.query.filter_by(phone_sell_id=phone_sell_id).all()
+
+#             redis_client.delete('all_sold_items')
+#             # Remove all related entries from Redis cache
+#             cart_keys = redis_client.keys(f'cart:*:{phone_sell_id}')
+#             if cart_keys:
+#                 redis_client.delete(*cart_keys)
+
+#             if items_to_delete:
+#                 for item in items_to_delete:
+#                     db.session.delete(item)
+#                 db.session.commit()
+#             else:
+#                 return jsonify({'error': 'Item not found in cart'}), 404
+
+#             return jsonify({'status': 'Payment successful', 'payout_result': payout_result})
+#         else:
+#             return jsonify({'status': 'Payment failed', 'error': payment.error}), 500
+
+#     except Exception as e:
+#         return jsonify({'status': 'Payment error', 'error': str(e)}), 500
+def send_email(subject, recipient, body):
+    # SMTP server configuration
+    smtp_server = os.getenv("SMTP_SERVER")
+    smtp_port = os.getenv("SMTP_PORT")
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+
+    # Email content
+    msg = MIMEMultipart()
+    msg['From'] = smtp_user
+    msg['To'] = recipient
+    msg['Subject'] = subject
+
+    msg.attach(MIMEText(body, 'html'))
+
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            server.sendmail(smtp_user, recipient, msg.as_string())
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
+
+def send_sns_notification(topic_arn, message):
+    try:
+        # Send message to SNS topic
+        response = sns_client.publish(
+            TopicArn=topic_arn,
+            Message=message
+        )
+        return response
+    except Exception as e:
+        print(f"Error sending SNS notification: {e}")
+        return None
+
+# def process_sqs_queue(queue_url):
+    try:
+        # Poll messages from the SQS queue
+        print("Polling SQS queue...")
+        response = sqs_client.receive_message(
+            QueueUrl=queue_url,
+            MaxNumberOfMessages=1,
+            WaitTimeSeconds=5
+        )
+
+        # Process each message in the queue
+        if 'Messages' in response:
+            for message in response['Messages']:
+                print(f"Received message: {message['Body']}")
+
+                # Extract the SNS message content
+                sns_message = json.loads(message['Body'])  # Parse the outer layer
+                notification_data = json.loads(sns_message['Message'])  # Parse the inner 'Message' field
+
+                email = notification_data.get('email')
+                subject = notification_data.get('subject')
+                body = notification_data.get('body')
+
+                print(f"Processing email to: {email}, subject: {subject}, body: {body}")
+
+                # Send email
+                if email:
+                    email_sent = send_email(subject, email, body)
+                    print(f"Email sent: {email_sent}")
+
+                # Delete the message from the queue after processing
+                sqs_client.delete_message(
+                    QueueUrl=queue_url,
+                    ReceiptHandle=message['ReceiptHandle']
+                )
+                print("Message deleted from queue.")
+        else:
+            print("No messages in the queue.")
+    except Exception as e:
+        print(f"Error processing SQS messages: {e}")
+
 @api.route('/payment-success', methods=['POST'])
 def payment_success():
     data = request.get_json()
     payment_id = data.get('paymentId')
     payer_id = data.get('payerId')
     address = data.get('address')
-    
+
     if not payment_id or not payer_id:
         return jsonify({'error': 'Missing paymentId or PayerID'}), 400
 
@@ -701,18 +870,16 @@ def payment_success():
     try:
         if payment.execute({"payer_id": payer_id}):
             payment_transaction_id = payment.transactions[0].related_resources[0].sale.id
-
             payment_amount = float(payment.transactions[0].amount.total)
-            payout_amount = payment_amount - 10
+            payout_amount = payment_amount - 10  # Example commission of 10 USD
 
             custom_data = json.loads(payment.transactions[0].custom)
-
             sellerpaypalemail = custom_data.get('sellerpaypalemail')
             buyer_id = custom_data.get('buyer_id')
             phone_sell_id = custom_data.get('phone_sell_id')
             seller_id = custom_data.get('seller_id')
 
-            # Create the payout
+            # Create payout
             payout_result = create_payout(sellerpaypalemail, payout_amount)
             payout_transaction_id = payout_result.get('payout_batch_id')
 
@@ -730,35 +897,49 @@ def payment_success():
             db.session.add(new_transaction)
             db.session.commit()
 
-            # Now delete the items from the cart
+            # Clear cart and Redis cache
             items_to_delete = Cart.query.filter_by(phone_sell_id=phone_sell_id).all()
-
-            redis_client.delete('all_sold_items')
-            # Remove all related entries from Redis cache
             cart_keys = redis_client.keys(f'cart:*:{phone_sell_id}')
             if cart_keys:
                 redis_client.delete(*cart_keys)
-            
-            if items_to_delete:
-                for item in items_to_delete:
-                    db.session.delete(item)
-                db.session.commit()
-            else:
-                return jsonify({'error': 'Item not found in cart'}), 404
+
+            for item in items_to_delete:
+                db.session.delete(item)
+            db.session.commit()
+
+            # Prepare email and SNS content
+            buyer_message = json.dumps({
+                'email': custom_data.get('buyer_email'),
+                'subject': "Payment Confirmation",
+                'body': f"Dear Buyer, your payment of {payment_amount} USD for phone ID {phone_sell_id} has been successful."
+            })
+
+            seller_message = json.dumps({
+                'email': custom_data.get('seller_email'),
+                'subject': "Payment Confirmation",
+                'body': f"Dear Seller, you have received a payment of {payout_amount} USD for phone ID {phone_sell_id}. The payout has been initiated."
+            })
+
+            # Send SNS notifications
+            send_sns_notification(buyer_sns_topic_arn, buyer_message)
+            send_sns_notification(seller_sns_topic_arn, seller_message)
+
+            # # Optionally process the SQS queue immediately after sending SNS
+            # process_sqs_queue(buyer_sqs_queue_url)
+            # process_sqs_queue(seller_sqs_queue_url)
 
             return jsonify({'status': 'Payment successful', 'payout_result': payout_result})
+
         else:
             return jsonify({'status': 'Payment failed', 'error': payment.error}), 500
 
     except Exception as e:
         return jsonify({'status': 'Payment error', 'error': str(e)}), 500
 
-
-
 @api.route('/get-payment-details', methods=['GET'])
 def get_payment_details():
     payment_id = request.args.get('paymentId')
-    
+
     if not payment_id:
         return jsonify({'error': 'Missing paymentId'}), 400
 
@@ -776,7 +957,7 @@ def error_page():
     return "Payment error."
 
 # @api.route('/addcart', methods=['POST'])
-# @cross_origin() 
+# @cross_origin()
 # def add_to_cart():
 #     access_token = request.headers.get('Authorization')
 #     if not access_token:
@@ -788,19 +969,19 @@ def error_page():
 
 #         buyer_id = data['buyer_id']
 #         phone_sell_id = data['phone_sell_id']
-        
+
 #         new_cart_item = Cart(buyer_id=buyer_id, phone_sell_id=phone_sell_id)
-        
+
 #         db.session.add(new_cart_item)
 #         db.session.commit()
-        
+
 #         return jsonify({'message': 'Cart item added successfully', 'cart': new_cart_item.serialize()}), 201
-    
+
 #     except Exception as e:
 #         return jsonify({'error': str(e)}), 500
-    
+
 # @api.route('/getcart', methods=['POST'])
-# @cross_origin() 
+# @cross_origin()
 # def get_cart():
 #     access_token = request.headers.get('Authorization')
 #     if not access_token:
@@ -813,9 +994,9 @@ def error_page():
 #             return jsonify({"success": False, "error": "buyer_id is required"}), 400
 
 #         cart_entries = Cart.query.filter_by(buyer_id=buyer_id).all()
-        
+
 #         cart_data = [cart.serialize() for cart in cart_entries if cart.phone]
-        
+
 #         return jsonify({"success": True, "phones": cart_data}), 200
 #     except Exception as e:
 #         return jsonify({"success": False, "error": str(e)}), 500
@@ -830,7 +1011,7 @@ def error_page():
 #         data = request.json
 #         buyer_id = data.get('buyer_id')
 #         phone_sell_id = data.get('phone_sell_id')
-        
+
 #         item_to_delete = Cart.query.filter_by(buyer_id=buyer_id, phone_sell_id=phone_sell_id).first()
 
 #         if not item_to_delete:
@@ -854,7 +1035,7 @@ def add_to_cart():
 
         buyer_id = data['buyer_id']
         phone_sell_id = data['phone_sell_id']
-        
+
         # Redis key for cart
         cart_key = f'cart:{buyer_id}:{phone_sell_id}'
 
@@ -939,7 +1120,7 @@ def delete_from_cart():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 # @api.route('/addfavorite', methods=['POST'])
-# @cross_origin() 
+# @cross_origin()
 # def add_to_favorite():
 #     access_token = request.headers.get('Authorization')
 #     if not access_token:
@@ -951,19 +1132,19 @@ def delete_from_cart():
 
 #         buyer_id = data['buyer_id']
 #         phone_sell_id = data['phone_sell_id']
-        
+
 #         new_favorite_item = Favorite(buyer_id=buyer_id, phone_sell_id=phone_sell_id)
-        
+
 #         db.session.add(new_favorite_item)
 #         db.session.commit()
-        
+
 #         return jsonify({'message': 'Favorite item added successfully', 'favorite': new_favorite_item.serialize()}), 201
-    
+
 #     except Exception as e:
 #         return jsonify({'error': str(e)}), 500
 
 # @api.route('/getfavorite', methods=['POST'])
-# @cross_origin() 
+# @cross_origin()
 # def get_favorite():
 #     access_token = request.headers.get('Authorization')
 #     if not access_token:
@@ -976,9 +1157,9 @@ def delete_from_cart():
 #             return jsonify({"success": False, "error": "buyer_id is required"}), 400
 
 #         favorite_entries = Favorite.query.filter_by(buyer_id=buyer_id).all()
-        
+
 #         favorite_data = [item.serialize() for item in favorite_entries if item.phone]
-        
+
 #         return jsonify({"success": True, "phones": favorite_data}), 200
 #     except Exception as e:
 #         return jsonify({"success": False, "error": str(e)}), 500
@@ -993,7 +1174,7 @@ def delete_from_cart():
 #         data = request.json
 #         buyer_id = data.get('buyer_id')
 #         phone_sell_id = data.get('phone_sell_id')
-        
+
 #         item_to_delete = Favorite.query.filter_by(buyer_id=buyer_id, phone_sell_id=phone_sell_id).first()
 
 #         if not item_to_delete:
@@ -1105,7 +1286,7 @@ def delete_favorite():
         return jsonify({'error': str(e)}), 500
 
 @api.route('/getpurchase', methods=['POST'])
-@cross_origin() 
+@cross_origin()
 def get_purchase():
     access_token = request.headers.get('Authorization')
     if not access_token:
@@ -1118,15 +1299,15 @@ def get_purchase():
             return jsonify({"success": False, "error": "buyer_id is required"}), 400
 
         purchase_entries = Transaction.query.filter_by(buyer_id=buyer_id).all()
-        
+
         purchase_data = [item.serialize() for item in purchase_entries if item.phone]
-        
+
         return jsonify({"success": True, "phones": purchase_data}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
 @api.route('/getsold', methods=['POST'])
-@cross_origin() 
+@cross_origin()
 def get_sold():
     access_token = request.headers.get('Authorization')
     if not access_token:
@@ -1139,9 +1320,9 @@ def get_sold():
             return jsonify({"success": False, "error": "buyer_id is required"}), 400
 
         sold_entries = Transaction.query.filter_by(seller_id=buyer_id).all()
-        
+
         sold_data = [item.serialize() for item in sold_entries if item.phone]
-        
+
         return jsonify({"success": True, "phones": sold_data}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -1164,7 +1345,7 @@ def get_all_sold():
     try:
         # Generate a cache key for the all-sold items
         cache_key = 'all_sold_items'
-        
+
         # Try to get data from cache
         cached_data = cache_get(cache_key)
         if cached_data:
@@ -1240,11 +1421,11 @@ def filter_phones():
         carrier=carrier,
         model=model
     )
-    
+
     # Convert cache_key_str to a string if necessary
     if isinstance(cache_key_str, bytes):
         cache_key_str = cache_key_str.decode('utf-8')
-    
+
     # Try to get data from cache
     cached_data = cache_get(cache_key_str)
     if cached_data:
@@ -1258,10 +1439,10 @@ def filter_phones():
     if not (phonetype or color or storage or carrier or model):
         all_phones = query.all()
         phones = [phone.serialize() for phone in all_phones]
-        
+
         # Cache the result if no filters are applied
         cache_set(cache_key_str, json.dumps(phones), timeout=300)
-        
+
         return jsonify({"phones": phones, "message": "No filters applied, returning all phones."})
 
     # Apply filtering conditions if parameters are provided

@@ -81,6 +81,8 @@ const Cart = () => {
                             buyer_id={buyerid} 
                             phone_sell_id={phone_sell_id} 
                             seller_id={user.id} 
+                            seller_email={user_email}
+                            buyer_email={store.user.email}
                         />
                     </div>
                 );
