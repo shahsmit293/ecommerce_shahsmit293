@@ -1,3 +1,4 @@
+import datetime
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.sql import func
@@ -154,4 +155,57 @@ class Favorite(db.Model):
             "buyer_id": self.buyer_id,
             "phone_sell_id": self.phone_sell_id,
             "phone": self.phone.serialize() if self.phone else {}
+        }
+
+class Subscribed(db.Model):
+    __tablename__ = 'subscribed'
+    id = db.Column(db.Integer, primary_key=True)
+    user_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=True)  
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=True)
+    user = db.relationship('User', backref=db.backref('subscriptions', lazy=True))
+
+    def __init__(self, user_email):
+        self.user_email = user_email
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'user_email': self.user_email,
+            'created_at': self.created_at,
+            'user':self.user.serialize() if self.user else {}
+        }
+
+class Meetings(db.Model):
+    __tablename__ = 'meetings'
+    id = db.Column(db.Integer, primary_key=True)
+    subscriber_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=True)
+    participant_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=True)
+    meeting_link = db.Column(db.String, nullable=True)
+    host_url = db.Column(db.String(600), nullable=True)
+    passcode = db.Column(db.String, nullable=True)
+    meeting_id = db.Column(db.String, nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now(), nullable=True)
+    subscriber = db.relationship('User', foreign_keys=[subscriber_email], backref=db.backref('created_meetings', lazy=True))
+    participant = db.relationship('User', foreign_keys=[participant_email], backref=db.backref('joined_meetings', lazy=True))
+
+    def __init__(self, subscriber_email, participant_email, meeting_link, host_url, passcode, meeting_id):
+        self.subscriber_email = subscriber_email
+        self.participant_email = participant_email
+        self.meeting_link = meeting_link
+        self.host_url=host_url
+        self.passcode = passcode
+        self.meeting_id = meeting_id
+
+    def serialize(self):
+        return {
+            'id': self.id,
+            'subscriber_email': self.subscriber_email,
+            'participant_email': self.participant_email,
+            'meeting_link': self.meeting_link,
+            'host_url':self.host_url,
+            'passcode': self.passcode,
+            'meeting_id': self.meeting_id,
+            'created_at': self.created_at,
+            'subscriber': self.subscriber.serialize() if self.subscriber else {},
+            'participant': self.participant.serialize() if self.participant else {}
         }

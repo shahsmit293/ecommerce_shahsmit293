@@ -19,6 +19,7 @@ import Purchase from "./pages/purchase";
 import Sold from "./pages/sold";
 import FilterPage from "./pages/filterpage";
 import MyListing from "./pages/mylisting";
+import Meetings from "./pages/meetings";
 const Layout = () => {
   return (
     <BrowserRouter>
@@ -42,6 +43,7 @@ const Layout = () => {
         <Route path="/sold" element={<Sold />} />
         <Route path="/filter" element={<FilterPage />} />
         <Route path="/mylisting" element={<MyListing />} />
+        <Route path="/meetings" element={<Meetings />} />
       </Routes>
     </BrowserRouter>
   );

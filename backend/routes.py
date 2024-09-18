@@ -1,6 +1,10 @@
-from flask import Flask, request, jsonify, Blueprint
+import base64
+from datetime import datetime, time, timedelta
+from flask import Flask, make_response, redirect, request, jsonify, Blueprint
 from flask_cors import CORS, cross_origin
-from models import db, User, Phones, Transaction, Cart, Favorite
+import requests
+from sqlalchemy import func
+from models import db, User, Phones, Transaction, Cart, Favorite, Subscribed, Meetings
 import boto3
 from functools import wraps
 import os
@@ -15,12 +19,18 @@ import redis
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import jwt
 api = Blueprint('api', __name__)
 load_dotenv()
 stream_chat_api_key = os.getenv("stream_chat_api_key")
 stream_chat_api_secret =os.getenv("stream_chat_api_secret")
 
 frontend_url=os.getenv("REACT_FRONTEND_URL")
+backend_url=os.getenv("REACT_APP_FLASK_BACKEND_URL")
+
+zoom_client_id = os.getenv("ZOOM_CLIENT_ID")
+zoom_client_secret = os.getenv("ZOOM_CLIENT_SECRET")
+zoom_account_id = os.getenv("ZOOM_ACCOUNT_ID")
 
 s3_bucket_name=os.getenv("s3_bucket_name")
 aws_access_key=os.getenv("aws_access_key")
@@ -1493,3 +1503,214 @@ def get_my_listing():
         return jsonify({"success": True, "alllistedphones": alllistedphones}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+    
+@api.route('/addsubscribe', methods=['POST'])
+@cross_origin()
+def subscribe():
+    data = request.get_json()
+    user_email = data.get('user_email')
+    
+    # Check if the user is already subscribed
+    existing_user = Subscribed.query.filter_by(user_email=user_email).first()
+    
+    if existing_user:
+        return jsonify({"message": "You are already subscribed."}), 400
+    
+    # Add new subscription
+    new_subscription = Subscribed(user_email=user_email)
+    db.session.add(new_subscription)
+    db.session.commit()
+    
+    return jsonify({"message": "Subscription successful!"})
+
+@api.route('/getsubscriber', methods=['POST'])
+@cross_origin()
+def get_subscriber():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
+
+    try:
+        data = request.get_json()
+        user_email = data.get('user_email')
+
+        if not user_email:
+            return jsonify({"success": False, "error": "User email is required"}), 400
+
+        subscriber = Subscribed.query.filter_by(user_email=user_email).first()
+        if not subscriber:
+            return jsonify({"success": True, "isSubscribed": False}), 200
+
+        # If the user is found, return success and subscription status
+        return jsonify({"success": True, "subscribers": subscriber.serialize()}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    
+   
+@api.route('/zoom/callback')
+@cross_origin()
+def zoom_callback():
+    code = request.args.get('code')
+    redirect_uri = f"{backend_url}zoom/callback"
+
+    token_url = 'https://zoom.us/oauth/token'
+    headers = {
+        'Authorization': f'Basic {base64.b64encode(f"{zoom_client_id}:{zoom_client_secret}".encode()).decode()}',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    data = {
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': redirect_uri
+    }
+
+    response = requests.post(token_url, headers=headers, data=data)
+
+    if response.status_code == 200:
+        tokens = response.json()
+        zoom_access_token = tokens['access_token']
+
+        # Redirect to a frontend URL with the token as a query parameter
+        redirect_url = f'{frontend_url}meetings?zoom_access_token={zoom_access_token}'
+        return redirect(redirect_url)
+    else:
+        return jsonify({'error': 'Token exchange failed'}), 400
+
+@api.route('/create_meeting', methods=['POST'])
+@cross_origin(supports_credentials=True)
+def create_meeting():
+    zoom_token = request.headers.get('Authorization')
+    access_token = request.headers.get('x-access-token')
+
+    if not zoom_token:
+        return jsonify({'error': 'Zoom token is missing'}), 401
+
+    if not access_token:
+        return jsonify({'error': 'Access token is missing'}), 401
+
+    # Remove 'Bearer ' prefix from the zoom_token
+    if zoom_token.startswith('Bearer '):
+        zoom_token = zoom_token[7:]
+
+    # Get the request data (subscriber_email)
+    data = request.get_json()
+    subscriber_email = data.get('subscriber_email')
+
+    if not subscriber_email:
+        return jsonify({'error': 'subscriber_email is required'}), 400
+
+    # Check if the user has more than 2 meetings already
+    meeting_count = Meetings.query.filter_by(subscriber_email=subscriber_email).count()
+    
+    if meeting_count >= 2:
+        return jsonify({'error': 'User has already created the maximum number of meetings (2)'}), 400
+
+    # Create Zoom meeting data
+    meeting_data = {
+        "topic": "New Meeting",
+        "type": 2,
+        "start_time": "2024-09-09T10:10:48Z",
+        "duration": 30,
+        "timezone": "America/Los_Angeles",
+        "agenda": "Discuss the trade",
+        "settings": {
+            "join_before_host": False,
+            "host_video": True,
+            "participant_video": True,
+            "mute_upon_entry": True,
+            "watermark": True,
+            "use_pmi": False,
+            "approval_type": 2,
+            "enforce_login": True,
+            "waiting_room": True,
+            "auto_recording": "none"
+        }
+    }
+
+    headers = {
+        'Authorization': f'Bearer {zoom_token}',  # Use the zoomtoken in the Authorization header
+        'Content-Type': 'application/json'
+    }
+
+    # Make request to Zoom API to create a meeting
+    response = requests.post('https://api.zoom.us/v2/users/me/meetings', json=meeting_data, headers=headers)
+
+    if response.status_code == 201:
+        meeting_info = response.json()
+
+        # Save meeting details to the database
+        new_meeting = Meetings(
+            subscriber_email=subscriber_email,
+            participant_email=None,
+            meeting_link=meeting_info['join_url'],
+            host_url=meeting_info['start_url'],
+            passcode=meeting_info['password'],
+            meeting_id=meeting_info['id']
+        )
+        db.session.add(new_meeting)
+        db.session.commit()
+
+        return jsonify(meeting_info)
+    else:
+        return jsonify({'error': 'Failed to create meeting'}), response.status_code
+
+
+@api.route('/getmeetings', methods=['POST'])
+@cross_origin()
+def get_all_meetings():
+    access_token = request.headers.get('Authorization')
+    if not access_token:
+        return jsonify({"error": "Access token not found"}), 401
+
+    data = request.get_json()
+    subscriber_email = data.get('subscriber_email')
+
+    if not subscriber_email:
+        return jsonify({"error": "subscriber_email is required"}), 400
+
+    all_meetings = Meetings.query.filter_by(subscriber_email=subscriber_email).all()
+    allmeetings=[meeting.serialize() for meeting in all_meetings]
+    return jsonify({"success": True, "allmeetings": allmeetings}), 200
+
+@api.route('/addparticipant', methods=['POST'])
+@cross_origin()
+def add_participant():
+    data = request.get_json()
+    meeting_id = data.get('meeting_id')
+    participant_email = data.get('participant_email')
+
+    if not meeting_id or not participant_email:
+        return jsonify({'error': 'Meeting ID and participant email are required'}), 400
+
+    meeting = Meetings.query.filter_by(meeting_id=meeting_id).first()
+    if not meeting:
+        return jsonify({'error': 'Meeting not found'}), 404
+
+    meeting.participant_email = participant_email
+    db.session.commit()
+
+    return jsonify({'message': 'Participant added successfully'})
+
+@api.route('/delete_meeting', methods=['DELETE'])
+@cross_origin()
+def delete_meeting():
+    try:
+        data = request.get_json()
+        meeting_id = data.get('meeting_id')
+
+        if not meeting_id:
+            return jsonify({"error": "meeting_id is required", "success": False}), 400
+
+        meeting = Meetings.query.filter_by(meeting_id=meeting_id).first()
+
+        if not meeting:
+            return jsonify({"error": "Meeting not found", "success": False}), 404
+
+        # Delete the meeting
+        db.session.delete(meeting)
+        db.session.commit()
+
+        return jsonify({"message": "Meeting deleted successfully", "success": True}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e), "success": False}), 500

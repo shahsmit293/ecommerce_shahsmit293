@@ -39,7 +39,10 @@ const getState = ({ getStore, getActions, setStore }) => {
             mysold: [],
             allsold: [],
             filteredPhones: [],
-            alllistedphones: []
+            alllistedphones: [],
+            subscribed:null,
+            allmeetings: [],
+            meetingserror:null
         },
         actions: {
             login: async (useremail, password) => {
@@ -753,6 +756,177 @@ const getState = ({ getStore, getActions, setStore }) => {
                 }
             },
 
+            addSubscribe: async (user_email) => {
+                try {
+                    const accessToken = Cookies.get("accessToken");
+                    const response = await fetch(`${backend}addsubscribe`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${accessToken}`
+                        },
+                        body: JSON.stringify({
+                            user_email
+                        }),
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Failed to add email to subscription table');
+                    }
+            
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error('Error adding email to subsciption:', error);
+                    throw error;
+                }
+            },
+
+            getSubscribed: async (user_email) => {
+                try {
+                    const accessToken = Cookies.get("accessToken");
+                    const response = await fetch(`${backend}getsubscriber`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`
+                        },
+                        body: JSON.stringify({ user_email})
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch phone details");
+                    }
+            
+                    const data = await response.json();
+                    setStore({subscribed: data.subscribers.user_email})
+                    return data.phones;
+                } catch (error) {
+                    console.error("Error fetching phone details:", error);
+                    throw error;
+                }
+            },
+        
+            createMeeting: async (subscriber_email) => {
+                try {
+                    const zoomToken = sessionStorage.getItem("zoomtoken");
+                    const accessToken = Cookies.get("accessToken");
+            
+                    if (!zoomToken) {
+                        throw new Error("Zoom token is missing");
+                    }
+            
+                    if (!accessToken) {
+                        throw new Error("Access token is missing");
+                    }
+            
+                    // Make POST request to backend to create the meeting
+                    const response = await fetch(`${backend}create_meeting`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${zoomToken}`,
+                            "x-access-token": accessToken
+                        },
+                        body: JSON.stringify({ subscriber_email }),
+                        credentials: 'include'
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to create the meeting");
+                    }
+            
+                    const meetingInfo = await response.json();
+                    console.log("Meeting created successfully:", meetingInfo);
+                    return meetingInfo;
+                } catch (error) {
+                    console.error("Error creating the meeting:", error);
+                    throw error;
+                }
+            },
+            
+            
+            getMeetings: async (subscriber_email) => {
+                try {
+                    const accessToken = Cookies.get("accessToken");
+                    const response = await fetch(`${backend}getmeetings`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`
+                        },
+                        body: JSON.stringify({ subscriber_email})
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to fetch subscriber details");
+                    }
+            
+                    const data = await response.json();
+                    setStore({allmeetings: data.allmeetings})
+                    return data.allmeetings;
+                } catch (error) {
+                    console.error("Error fetching subscriber details:", error);
+                    setStore({meetingserror: error})
+                    throw error;
+                }
+            },
+
+            addParticipant: async (meeting_id, participant_email) => {
+                try {
+                    const accessToken = Cookies.get("accessToken");
+                    const response = await fetch(`${backend}addparticipant`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`
+                        },
+                        body: JSON.stringify({ meeting_id, participant_email })
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to add participant");
+                    }
+            
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    return { error: error.message };
+                }
+            },
+            
+        
+            deleteMeeting: async (meeting_id) => {
+                try {
+                    const accessToken = Cookies.get("accessToken");
+                    const response = await fetch(`${backend}delete_meeting`, {
+                        method: "DELETE",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${accessToken}`
+                        },
+                        body: JSON.stringify({ meeting_id: meeting_id })
+                    });
+            
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || "Failed to delete the meeting");
+                    }
+            
+                    const result = await response.json();
+                    console.log("Meeting deleted successfully:", result);
+                    return result;
+                } catch (error) {
+                    console.error("Error deleting the meeting:", error);
+                    throw error;
+                }
+            }
+            
 
         }
     };

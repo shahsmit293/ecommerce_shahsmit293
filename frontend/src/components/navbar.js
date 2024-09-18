@@ -13,7 +13,6 @@ const Navbar = () => {
     window.location.reload();
     navigate('/'); // Optionally navigate to login page after logout
   };
-
   return (
     <nav className="navbar navbar-expand-lg bg-body-tertiary">
       <div className="container-fluid">
@@ -66,6 +65,9 @@ const Navbar = () => {
                 </li>
                 <li className="nav-item">
                   <button className="nav-link" onClick={handleLogout}>Logout</button>
+                </li>
+                <li className="nav-item">
+                  <button className="nav-link" onClick={()=>navigate('/meetings')}>Sunscription</button>
                 </li>
                 <li className="nav-item dropdown">
                   <h4
