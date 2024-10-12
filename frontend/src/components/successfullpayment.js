@@ -5,11 +5,20 @@ import { Context } from '../store/appContext';
 const PaymentSuccess = () => {
     const navigate = useNavigate()
     const [status, setStatus] = useState('');
+    const {store,actions} = useContext(Context);
     const [price, setPrice] = useState(null);
     const [paymentId, setPaymentId] = useState('');
     const [payerId, setPayerId] = useState('');
     const backend = process.env.REACT_APP_FLASK_BACKEND_URL;
     const [address,setAddrees] =useState("")
+    if (!store.token) {
+        return (
+          <div>
+            Please log in to view this page.
+            <button onClick={() => navigate('/login')}>Login</button>
+          </div>
+        );
+      }
 
     useEffect(() => {
         const queryParams = new URLSearchParams(window.location.search);
@@ -17,7 +26,6 @@ const PaymentSuccess = () => {
         const payerId = queryParams.get('PayerID');
         console.log('Payment ID:', paymentId);
         console.log('Payer ID:', payerId);
-
         if (paymentId && payerId) {
             setPaymentId(paymentId);
             setPayerId(payerId);

@@ -1,13 +1,18 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import { Context } from '../store/appContext';
+import { useNavigate } from 'react-router-dom';
+import '../styles/signup.css';
 
 const Signup = () => {
-    const { actions, store } = useContext(Context);
+    const navigate = useNavigate();
+    const { actions } = useContext(Context);
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
-    const [verificationCode, setVerificationCode] = useState(''); // State for verification code
-    const [error, setError] = useState('');
-    const [showVerification, setShowVerification] = useState(false); // State to control popup/modal
+    const [verificationCode, setVerificationCode] = useState('');
+    const [error, setError] = useState(''); // State to handle signup errors
+    const [verificationError, setVerificationError] = useState(''); // For verification errors
+    const [showVerification, setShowVerification] = useState(false);
+    const [showSuccessSpinner, setShowSuccessSpinner] = useState(false); // For showing spinner after verification
     const [passwordCriteria, setPasswordCriteria] = useState({
         lowerCase: false,
         upperCase: false,
@@ -16,42 +21,64 @@ const Signup = () => {
         specialChar: false,
         noLeadingTrailingSpace: false
     });
-    const [isTyping, setIsTyping] = useState(false); // State to track if the user has started typing
+    const [isTyping, setIsTyping] = useState(false);
 
     const passwordInputRef = useRef(null);
 
     const handlePasswordChange = (e) => {
         const value = e.target.value;
         setPassword(value);
-        setIsTyping(true); // Set isTyping to true once the user starts typing
+        setIsTyping(true);
+        setError('');
 
         setPasswordCriteria({
             lowerCase: /[a-z]/.test(value),
             upperCase: /[A-Z]/.test(value),
             number: /\d/.test(value),
             minLength: value.length >= 8,
-            specialChar: /[\W_]/.test(value) || /\s/.test(value),
+            specialChar: /[\W_]/.test(value),
             noLeadingTrailingSpace: /^\S.*\S$|^\S$/.test(value)
         });
     };
 
+    const handleEmailChange = (e) => {
+        const value = e.target.value;
+        setEmail(value);
+        setError('');
+    };
+
     const handleSubmit = async (event) => {
         event.preventDefault();
+        setError(''); // Clear previous errors
         try {
-            await actions.signup(email, password);
-            setShowVerification(true); // Show verification popup after signup
+            const result = await actions.signup(email, password);
+            if (result === true) {
+                setShowVerification(true); // Show verification modal if signup is successful
+            } else {
+                setError(result); // Display error message if signup failed
+            }
         } catch (err) {
-            setError(store.error);
+            setError('An unexpected error occurred. Please try again.'); // Fallback error message
         }
     };
 
     const handleVerificationSubmit = async (event) => {
         event.preventDefault();
+        setVerificationError(''); // Clear previous verification error
         try {
-            await actions.confirmSignup(email, verificationCode);
-            // Optionally, handle successful confirmation: redirect, show success message, etc.
+            const result = await actions.confirmSignup(email, verificationCode);
+            if (result === true) {
+                // Show success message and spinner
+                setShowSuccessSpinner(true);
+                setTimeout(() => {
+                    // After 2 seconds, navigate to login page
+                    navigate('/login');
+                }, 2000);
+            } else {
+                setVerificationError(result); // Show the error if the verification code is incorrect
+            }
         } catch (err) {
-            setError(err.message);
+            setVerificationError('An unexpected error occurred. Please try again.');
         }
     };
 
@@ -69,70 +96,107 @@ const Signup = () => {
     }, []);
 
     return (
-        <div>
-            <h2>Signup</h2>
-            <form onSubmit={handleSubmit}>
-                <div>
-                    <label>
-                        Email:
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                    </label>
+        <div className="signup-container">
+            <div className="signup-left">
+                <img src="https://staticloginsignuppage.s3.amazonaws.com/loginsignupimage.jpg" alt="Phone Illustration" className="signup-image" />
+            </div>
+            <div className="signup-right">
+                <div className="form-container">
+                    <h1>Join Us!</h1>
+                    <p>Create your account</p>
+                    <form onSubmit={handleSubmit}>
+                        <div className="input-group">
+                            <input
+                                type="email"
+                                placeholder="Email"
+                                value={email}
+                                onChange={handleEmailChange} // Clear error on typing in email field
+                                required
+                            />
+                        </div>
+                        <div className="input-group">
+                            <input
+                                type="password"
+                                placeholder="Password"
+                                value={password}
+                                onChange={handlePasswordChange} // Clear error on typing in password field
+                                required
+                                ref={passwordInputRef}
+                            />
+                        </div>
+                        {isTyping && (
+                            <div className="password-criteria">
+                                <ul>
+                                    <li style={{ color: passwordCriteria.lowerCase ? 'green' : 'red' }}>
+                                        {passwordCriteria.lowerCase ? '✓' : '✖'} Lower case letter
+                                    </li>
+                                    <li style={{ color: passwordCriteria.upperCase ? 'green' : 'red' }}>
+                                        {passwordCriteria.upperCase ? '✓' : '✖'} Upper case letter
+                                    </li>
+                                    <li style={{ color: passwordCriteria.number ? 'green' : 'red' }}>
+                                        {passwordCriteria.number ? '✓' : '✖'} Number
+                                    </li>
+                                    <li style={{ color: passwordCriteria.minLength ? 'green' : 'red' }}>
+                                        {passwordCriteria.minLength ? '✓' : '✖'} At least 8 characters
+                                    </li>
+                                    <li style={{ color: passwordCriteria.specialChar ? 'green' : 'red' }}>
+                                        {passwordCriteria.specialChar ? '✓' : '✖'} Special character or space
+                                    </li>
+                                    <li style={{ color: passwordCriteria.noLeadingTrailingSpace ? 'green' : 'red' }}>
+                                        {passwordCriteria.noLeadingTrailingSpace ? '✓' : '✖'} No leading/trailing space
+                                    </li>
+                                </ul>
+                            </div>
+                        )}
+                        {error && <div className="error-message">{error}</div>} {/* Display error message here */}
+                        <button type="submit" className="signup-button">Sign Up</button>
+                    </form>
+                    <div className="login-text">
+                        Already have an account? 
+                        <button onClick={() => navigate('/login')} className="login-btn">Login</button>
+                    </div>
                 </div>
-                <div>
-                    <label>
-                        Password:
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={handlePasswordChange}
-                            required
-                            ref={passwordInputRef}
-                        />
-                    </label>
-                </div>
-                {isTyping && ( // Only show the criteria list if the user has started typing
-                    <div>
-                        <ul>
-                            <li style={{ color: passwordCriteria.lowerCase ? 'green' : 'red' }}>
-                                {passwordCriteria.lowerCase ? '✓' : '✖'} Password must contain a lower case letter
-                            </li>
-                            <li style={{ color: passwordCriteria.upperCase ? 'green' : 'red' }}>
-                                {passwordCriteria.upperCase ? '✓' : '✖'} Password must contain an upper case letter
-                            </li>
-                            <li style={{ color: passwordCriteria.number ? 'green' : 'red' }}>
-                                {passwordCriteria.number ? '✓' : '✖'} Password must contain a number
-                            </li>
-                            <li style={{ color: passwordCriteria.minLength ? 'green' : 'red' }}>
-                                {passwordCriteria.minLength ? '✓' : '✖'} Password must contain at least 8 characters
-                            </li>
-                            <li style={{ color: passwordCriteria.specialChar ? 'green' : 'red' }}>
-                                {passwordCriteria.specialChar ? '✓' : '✖'} Password must contain a special character or a space
-                            </li>
-                            <li style={{ color: passwordCriteria.noLeadingTrailingSpace ? 'green' : 'red' }}>
-                                {passwordCriteria.noLeadingTrailingSpace ? '✓' : '✖'} Password must not contain a leading or trailing space
-                            </li>
-                        </ul>
+
+                {/* Verification Modal */}
+                {showVerification && (
+                    <div className="modal show" style={{ display: 'block' }}>
+                        <div className="modal-dialog">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title">Verify Email</h5>
+                                    <button type="button" className="close" onClick={() => setShowVerification(false)}>
+                                        <span>&times;</span>
+                                    </button>
+                                </div>
+                                <div className="modal-body">
+                                    <form onSubmit={handleVerificationSubmit}>
+                                        <div className="input-group">
+                                            <input
+                                                type="text"
+                                                placeholder="Verification Code"
+                                                value={verificationCode}
+                                                onChange={(e) => setVerificationCode(e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <button type="submit" className="verify-btn">Verify</button>
+                                        {verificationError && <p style={{ color: 'red' }}>{verificationError}</p>}
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
-                {error && <div style={{ color: 'red' }}>{error}</div>}
-                <button type="submit">Signup</button>
-            </form>
 
-            {/* Verification Popup */}
-            {showVerification && (
-                <div>
-                    <h2>Verify Email</h2>
-                    <form onSubmit={handleVerificationSubmit}>
-                        <div>
-                            <label>
-                                Verification Code:
-                                <input type="text" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} required />
-                            </label>
-                        </div>
-                        <button type="submit">Verify</button>
-                    </form>
-                </div>
-            )}
+                {/* Success Spinner Section */}
+                {showSuccessSpinner && (
+                    <div className="success-spinner">
+                        <div className="spinner"></div>
+                        <p>Successfully registered! Redirecting...</p>
+                    </div>
+                )}
+
+            </div>
         </div>
     );
 };

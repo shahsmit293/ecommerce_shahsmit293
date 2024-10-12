@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Context } from "../store/appContext";
 import { useNavigate } from "react-router-dom";
+import '../styles/favorites.css'; // Import the CSS file for table styles
 
 const Favorite = () => {
     const { store, actions } = useContext(Context);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);  // Error state for handling fetch failures
+    const [error, setError] = useState(null); // Error state for handling fetch failures
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -30,9 +31,21 @@ const Favorite = () => {
         fetchFavoritePhones();
     }, [store.activeuserid]); // Depend on `store.activeuserid` to ensure it is set before fetching
 
-    // Handle loading state
+    if (!store.token) {
+        return (
+          <div>
+            Please log in to view this page.
+            <button onClick={() => navigate('/login')}>Login</button>
+          </div>
+        );
+      }
+
     if (loading) {
-        return <div>Loading...</div>;
+        return (
+            <div className="loading-spinner">
+                <div className="spinner"></div>
+            </div>
+        );
     }
 
     // Handle error state
@@ -61,47 +74,65 @@ const Favorite = () => {
     };
 
     return (
-        <div>
-            <h1>Phone Details</h1>
-            {store.allfavorites.map((cartItem, index) => {
-                const {
-                    phone_sell_id,
-                    phone: {
-                        model,
-                        price,
-                        phonetype,
-                        color,
-                        storage,
-                        carrier,
-                        condition,
-                        seller,
-                        location,
-                        IMEI,
-                        user_email,
-                        first_name,
-                        last_name,
-                        paypal_email,
-                    },
-                } = cartItem;
+        <div className="fav-table-container">
+            <h2>Phone</h2>
+            <table className="fav-table">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Price</th>
+                        <th>Type</th>
+                        <th>Color</th>
+                        <th>Storage</th>
+                        <th>Carrier</th>
+                        <th>Condition</th>
+                        <th>Seller</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {store.allfavorites.map((cartItem, index) => {
+                        const {
+                            phone_sell_id,
+                            phone: {
+                                model,
+                                price,
+                                phonetype,
+                                color,
+                                storage,
+                                carrier,
+                                condition,
+                                seller,
+                            },
+                        } = cartItem;
 
-                return (
-                    <div key={index} style={{ marginBottom: '20px' }}>
-                        <p><strong>Model:</strong> {model}</p>
-                        <p><strong>Price:</strong> ${price}</p>
-                        <p><strong>Type:</strong> {phonetype}</p>
-                        <p><strong>Color:</strong> {color}</p>
-                        <p><strong>Storage:</strong> {storage}</p>
-                        <p><strong>Carrier:</strong> {carrier}</p>
-                        <p><strong>Condition:</strong> {condition}</p>
-                        <p><strong>Seller:</strong> {seller}</p>
-                        <p><strong>Location:</strong> {location}</p>
-                        <button onClick={() => handleDelete(phone_sell_id)}>Delete</button>
-                        <button className="btn btn-primary" onClick={() => handleView(phone_sell_id)}>
-                            <strong>View</strong>
-                        </button>
-                    </div>
-                );
-            })}
+                        return (
+                            <tr key={index}>
+                                <td data-label="Model">{model}</td>
+                                <td data-label="Price">${price}</td>
+                                <td data-label="Type">{phonetype}</td>
+                                <td data-label="Color">{color}</td>
+                                <td data-label="Storage">{storage}</td>
+                                <td data-label="Carrier">{carrier}</td>
+                                <td data-label="Condition">{condition}</td>
+                                <td data-label="Seller">{seller}</td>
+                                <td className="fav-actions">
+                                    <button 
+                                        className="fav-view-button" 
+                                        onClick={() => handleView(phone_sell_id)}>
+                                        View
+                                    </button>
+                                    <button 
+                                        className="fav-delete-button" 
+                                        onClick={() => handleDelete(phone_sell_id)}>
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
         </div>
     );
 };

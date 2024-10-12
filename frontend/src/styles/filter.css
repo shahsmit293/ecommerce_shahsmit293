@@ -1,0 +1,77 @@
+/* Filter Sidebar */
+.filter-sidebar {
+  background-color: #1a3eb3; /* Background color for the sidebar */
+  padding: 20px; /* Padding inside the sidebar */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow for some depth */
+  height: 100vh; /* Full height to cover the entire left side */
+  position: sticky; /* Sticky position */
+  top: 0; /* Stick to the top of the page */
+  box-sizing: border-box; /* Include padding in height */
+  overflow-y: auto; /* Enable scrolling for the filter sidebar */
+}
+
+/* Filter Bar */
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 20px 0;
+  gap: 20px;
+}
+
+/* Filter Dropdown */
+.filter-dropdown {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.filter-dropdown label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #ffffff; /* White Text for Labels */
+}
+
+.filter-dropdown select {
+  padding: 12px; /* Consistent padding */
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  background-color: #ffffff; /* White Background */
+  color: #333; /* Dark Text */
+  font-size: 1rem; /* Font Size */
+  width: 100%;
+  transition: border-color 0.3s ease;
+}
+
+.filter-dropdown select:focus {
+  border-color: #1a3eb3; /* Blue Border on Focus */
+}
+
+/* Filter Actions */
+.filter-actions {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px; /* Space between buttons */
+}
+
+/* Buttons */
+.filter-actions .select-button,
+.filter-actions .reset-button {
+  width: 100%; /* Full width buttons for consistency */
+  padding: 12px; /* Consistent padding */
+  background-color: #1a3eb3; /* Blue Background */
+  border: none;
+  border-radius: 5px; /* Rounded corners */
+  color: #ffffff; /* White Text */
+  font-size: 1rem; /* Consistent font size */
+  font-weight: bold; /* Bold Text */
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
+}
+
+/* Dark blue hover effect for buttons */
+.filter-actions .select-button:hover,
+.filter-actions .reset-button:hover {
+  background-color: #142c8b; /* Darker blue on hover */
+}

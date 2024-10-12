@@ -463,6 +463,9 @@ def get_phones():
         phones = Phones.query.all()
         phones_list = [phone.serialize() for phone in phones]
 
+        # Reverse the list before caching and returning
+        phones_list.reverse()
+
         cache_set(cache_key, json.dumps(phones_list))
 
         return jsonify(phones_list), 200
@@ -1421,7 +1424,8 @@ def filter_phones():
     storage = request.args.get('storage', '')
     carrier = request.args.get('carrier', '')
     model = request.args.get('model', '')
-
+    sort = request.args.get('sort', '')
+    print(f"Sort parameter received: {sort}")
     # Generate a unique cache key based on the filter parameters
     prefix = 'phone_filter:'  # Define a prefix manually
     cache_key_str = prefix + cache_key(
@@ -1429,7 +1433,8 @@ def filter_phones():
         color=color,
         storage=storage,
         carrier=carrier,
-        model=model
+        model=model,
+        sort=sort
     )
 
     # Convert cache_key_str to a string if necessary
@@ -1446,7 +1451,7 @@ def filter_phones():
     query = Phones.query
 
     # Check if any filters are applied; if not, fetch all phones
-    if not (phonetype or color or storage or carrier or model):
+    if not (phonetype or color or storage or carrier or model or sort):
         all_phones = query.all()
         phones = [phone.serialize() for phone in all_phones]
 
@@ -1466,6 +1471,12 @@ def filter_phones():
         query = query.filter(Phones.carrier.ilike(f"%{carrier}%"))
     if model:
         query = query.filter(Phones.model.ilike(f"%{model}%"))
+    if sort:
+        if sort == 'asc':
+
+            query = query.order_by(Phones.price.asc())  # Sort by price ascending
+        elif sort == 'desc':
+            query = query.order_by(Phones.price.desc())
 
     # Execute the query and get the filtered phones
     filtered_phones = query.all()

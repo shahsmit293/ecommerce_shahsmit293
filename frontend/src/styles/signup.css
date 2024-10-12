@@ -1,0 +1,206 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Main Container */
+.signup-container {
+    display: flex;
+    height: 100vh;
+    justify-content: space-between;
+}
+
+/* Left Side Styling */
+.signup-left {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff;
+}
+
+.signup-image {
+    max-width: 100%;
+    height: -webkit-fill-available; /* Responsive Image */
+}
+
+/* Right Side Styling */
+.signup-right {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1a3eb3; /* Blue Background */
+    padding: 20px;
+}
+
+/* Form Container */
+.form-container {
+    max-width: 400px;
+    width: 100%;
+    padding: 2rem;
+    background-color: #ffffff; /* White Background for Form */
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Form Heading */
+.form-container h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #1a3eb3; /* Blue Text */
+}
+
+/* Form Subtext */
+.form-container p {
+    margin-bottom: 1.5rem;
+    color: #6c757d; /* Light Grey Text */
+}
+
+/* Input Fields */
+.input-group {
+    margin-bottom: 1rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Password Criteria */
+.password-criteria {
+    text-align: left;
+    margin-bottom: 1rem;
+}
+
+.password-criteria ul {
+    list-style: none;
+    padding-left: 0;
+    font-size: 0.9rem;
+}
+
+/* Buttons */
+.signup-button, .verify-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #1a3eb3; /* Blue Background */
+    border: none;
+    border-radius: 5px;
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.signup-button:hover, .verify-btn:hover {
+    background-color: #142c8b; /* Darker Blue on Hover */
+}
+
+/* Error Message */
+.error-message {
+    color: red;
+    margin-bottom: 1rem;
+}
+
+/* Login Text */
+.login-text {
+    margin-top: 1.5rem;
+    color: #6c757d;
+}
+
+.login-text button {
+    background: none;
+    border: none;
+    color: #1a3eb3;
+    cursor: pointer;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.login-text button:hover {
+    color: #142c8b;
+}
+
+/* Verification Section */
+.verification-section {
+    margin-top: 2rem;
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .signup-container {
+        flex-direction: column;
+        justify-content: center;
+        background-image: url('https://staticloginsignuppage.s3.amazonaws.com/loginsignupimage.jpg');
+        background-size: cover;
+        background-position: center;
+        height: 100vh;
+    }
+
+    .signup-left {
+        display: none; /* Hide the left side on smaller screens */
+    }
+
+    .signup-right {
+        width: 100%;
+        flex: none;
+        height: auto;
+        background-color: transparent; /* Remove background color on smaller screens */
+    }
+
+    .form-container {
+        max-width: 320px;
+        background-color: rgba(255, 255, 255, 0.9); /* Slight transparency for form */
+        margin: auto;
+    }
+}
+
+/* Spinner Centering */
+.success-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.8); /* Optional: Semi-transparent background */
+    width: 100vw;
+    height: 100vh;
+    z-index: 1000;
+}
+
+.success-spinner .spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border-left-color: #09f;
+    animation: spin 1s ease infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.success-spinner p {
+    margin-top: 10px;
+    font-size: 1.2rem;
+    color: #09f;
+}

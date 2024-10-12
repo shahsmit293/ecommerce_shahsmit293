@@ -1,0 +1,192 @@
+.sellactivity-container {
+  display: flex; /* Flex container for side-by-side layout */
+  background-color: white; /* Light background color for the whole page */
+  min-height: 100vh; /* Full height of the viewport */
+}
+
+/* Styling for the left sidebar */
+.sellbutton-container {
+  width: 300px; /* Fixed width for the sidebar */
+  background-color: #1a3eb3; /* Blue background */
+  padding: 20px; /* Padding inside the sidebar */
+  display: flex; /* Flex container for buttons */
+  flex-direction: column; /* Vertical arrangement of buttons */
+  gap: 15px; /* Space between buttons */
+  border-right: 1px solid #ddd; /* Light border on the right side */
+  border-top-left-radius: 10px; /* Rounded corners for top-left */
+  border-bottom-left-radius: 10px; /* Rounded corners for bottom-left */
+}
+
+/* Styling for the toggle buttons */
+.selltoggle-button {
+  width: 100%; /* Full width button */
+  padding: 12px; /* Padding inside the button */
+  background-color: #1a3eb3; /* Default blue background */
+  color: white; /* White text */
+  border: none; /* Remove default border */
+  border-radius: 10px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor on hover */
+  font-weight: bold; /* Bold font */
+  text-align: center; /* Center align text */
+  transition: background-color 0.3s ease; /* Smooth background transition */
+}
+
+/* Dark blue hover effect for the toggle buttons */
+.selltoggle-button:hover {
+  background-color: #142c8b; /* Darker blue on hover */
+}
+
+.selltoggle-button.active {
+  background-color: #142c8b; /* White background when active */
+  border: 2px solid #1a3eb3; /* Blue border when active */
+}
+
+/* Component container on the right */
+.sellcomponent-container {
+  flex-grow: 1; /* Take up remaining space */
+  padding: 0px 20px 20px 0px; /* Padding around the component area */
+  background-color: #f9f9f9; /* Light grey background for content area */
+  border-top-right-radius: 10px; /* Rounded corners for top-right */
+  border-bottom-right-radius: 10px; /* Rounded corners for bottom-right */
+  overflow: auto; /* Allow scrolling if content overflows */
+}
+
+/* Page title styling */
+.page-title {
+  text-align: center; /* Center align the title */
+  font-size: 24px; /* Font size */
+  font-weight: bold; /* Bold font */
+  margin-bottom: 20px; /* Space below the title */
+  color: #1a3eb3; /* Blue color for title */
+}
+
+/* Form layout for larger screens */
+.grid-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Two-column grid */
+  grid-gap: 20px; /* Gap between grid items */
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 1000px;
+  margin: 40px auto;
+}
+
+/* Styling for the phone title */
+.phonetitle {
+  grid-column: 1 / -1; /* Make the title span across both columns */
+  text-align: center; /* Center the title */
+  margin-bottom: 20px; /* Add some space below the title */
+}
+
+/* Form item styles */
+.form-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-control {
+  padding: 10px 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-control:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.3);
+  outline: none;
+}
+
+#images {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px dashed #ccc;
+  font-size: 16px;
+  background-color: #f7f7f7;
+}
+
+.btn-primary {
+  grid-column: span 2; /* Make the submit button span both columns */
+  background-color: #007bff;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 15px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+/* Spinner styles */
+.spinner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's on top of other elements */
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #09f;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 992px) {
+  .sellactivity-container {
+    flex-direction: column; /* Stack sellbutton container and form vertically */
+  }
+
+  .sellbutton-container {
+    width: 100%; /* Full width on smaller screens */
+    border-right: none;
+    border-bottom: 1px solid #ddd; /* Border below on smaller screens */
+    border-radius: 10px 10px 0 0; /* Rounded corners on top */
+  }
+
+  .sellcomponent-container {
+    padding: 20px;
+    border-radius: 0 0 10px 10px; /* Rounded corners on bottom */
+  }
+
+  /* Switch to a single column layout for the form */
+  .grid-form {
+    display: flex;
+    flex-direction: column; /* Stack form fields vertically */
+    padding: 20px; /* Reduce padding for smaller screens */
+  }
+
+  .btn-primary {
+    grid-column: auto; /* Reset the button spanning for smaller screens */
+    width: 100%; /* Full width for button */
+  }
+}

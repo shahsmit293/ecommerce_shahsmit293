@@ -1,3 +1,78 @@
-.App{
-  background-color:navajowhite ;
+
+.app-container {
+  display: flex; /* Flex container for side-by-side layout */
+  background-color: white; /* Light background color for the whole page */
+  min-height: 100vh;
+   /* Full height of the viewport */
+}
+
+
+.phone-list-container {
+  flex-grow: 1; /* Take remaining space */
+  background-color: white; /* White background for the phone list */
+  padding: 20px; /* Padding inside the phone list */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow for some depth */
+  overflow-y: auto; /* Scroll only the phone list container */
+  height: 100vh; /* Full height of the viewport */
+  box-sizing: border-box; /* Include padding in height */
+}
+
+/* No phones available message styling */
+.no-phones-message {
+  text-align: center;
+  font-size: 18px;
+  color: #6c757d;
+  margin-top: 50px;
+}
+
+.filter-sidebar {
+  background-color: #1a3eb3; /* Background color for the sidebar */
+  padding: 20px; /* Padding inside the sidebar */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow for some depth */
+  height: 100vh; /* Full height to cover the entire left side */
+  position: sticky; /* Sticky position */
+  top: 0; /* Stick to the top of the page */
+  box-sizing: border-box; /* Include padding in height */
+  overflow-y: auto; /* Enable scrolling for the filter sidebar */
+}
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column; /* Stack filter and phone list vertically on smaller screens */
+  }
+  .filter-sidebar {
+    height: auto;
+    width: 100%; /* Full width for filter sidebar */
+    margin-bottom: 20px; /* Space between sidebar and phone list */
+    position: static;
+  }
+  .phone-list-container {
+    flex-grow: 1;
+  }
+}
+
+/* App.css */
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Full screen height to center the spinner */
+  font-size: 18px;
+  color: #555;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #000;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

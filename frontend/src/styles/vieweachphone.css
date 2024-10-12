@@ -1,0 +1,259 @@
+/* Fullscreen overlay styles */
+.fullscreen-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* Ensure it's on top */
+}
+
+.fullscreen-image {
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: 15px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #fff;
+    cursor: pointer;
+}
+
+.prev-btn-fullscreen, .next-btn-fullscreen {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: #fff;
+    padding: 10px;
+    font-size: 1.8rem;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.prev-btn-fullscreen {
+    left: 20px;
+}
+
+.next-btn-fullscreen {
+    right: 20px;
+}
+
+.prev-btn-fullscreen:hover, .next-btn-fullscreen:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* Main container and image styling */
+.phone-details-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    padding: 30px;
+    background-color: #f9f9f9;
+    border-radius: 15px;
+    max-width: 1200px;
+    margin: 40px auto;
+    width: 100%;
+}
+
+.phone-images {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    overflow: hidden;
+    background-color: #eee;
+    width: 100%;
+    max-width: 450px; /* Set a max width for the image container */
+    height: 300px;    /* Set a fixed height for the image container */
+    margin: 0 auto;   /* Center the image container */
+}
+
+.phone-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ensures the image maintains its aspect ratio and covers the container */
+    border-radius: 15px;
+    transition: transform 0.3s ease-in-out;
+    cursor: pointer; /* Add pointer cursor */
+}
+
+.phone-image:hover {
+    transform: scale(1.03);
+}
+
+/* Slideshow navigation buttons */
+.prev-btn, .next-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    border: none;
+    color: #fff;
+    padding: 10px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.3s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.prev-btn:hover, .next-btn:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.prev-btn {
+    left: 10px;
+}
+
+.next-btn {
+    right: 10px;
+}
+
+/* Progress dots at the bottom */
+.image-indicators {
+    position: absolute;
+    bottom: 15px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.image-indicators .dot {
+    height: 10px;
+    width: 10px;
+    margin: 0 5px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    display: inline-block;
+    transition: background-color 0.3s ease-in-out;
+}
+
+.image-indicators .dot.active {
+    background-color: #fff;
+}
+
+.phone-info {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 0 10px;
+}
+
+.phone-info h1 {
+    font-size: 2.2rem;
+    margin: 0;
+    color: #333;
+    font-weight: 700;
+}
+
+.phone-info p {
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.6;
+}
+
+.phone-info ul {
+    list-style: none;
+    padding: 0;
+    font-size: 1rem;
+    color: #444;
+}
+
+.phone-info li {
+    margin-bottom: 8px;
+}
+
+.phone-price {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #1a3eb3;
+}
+
+.buy-now-button {
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    background-color: #1a3eb3;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: none;
+}
+
+.buy-now-button:hover {
+    background-color: #1a3eb3;
+}
+
+.sold-out-viewpage, .already-in-cart {
+    font-size: 1.5rem;
+    color: #f44336;
+    font-weight: bold;
+    margin: 15px 0;
+}
+
+.loading-spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-left-color: #000;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 768px) {
+    .phone-details-container {
+        padding: 20px;
+        grid-template-columns: 1fr;
+    }
+
+    .phone-info h1 {
+        font-size: 2rem;
+    }
+
+    .phone-price {
+        font-size: 1.6rem;
+    }
+
+    .buy-now-button {
+        font-size: 1rem;
+        padding: 10px 20px;
+    }
+
+    .phone-images {
+        max-width: 100%;
+        height: 250px; /* Adjust the height for smaller screens */
+    }
+}

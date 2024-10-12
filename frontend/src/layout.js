@@ -2,7 +2,6 @@ import React from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import App from "./pages/App";
 import Login from "./pages/login";
-import Profile from "./pages/profile";
 import Signup from "./pages/signup";
 import SellIphone from "./pages/selliphone";
 import SellSamsung from "./pages/sellsamsung";
@@ -20,6 +19,7 @@ import Sold from "./pages/sold";
 import FilterPage from "./pages/filterpage";
 import MyListing from "./pages/mylisting";
 import Meetings from "./pages/meetings";
+import Profile from "./pages/profile";
 const Layout = () => {
   return (
     <BrowserRouter>
@@ -44,6 +44,7 @@ const Layout = () => {
         <Route path="/filter" element={<FilterPage />} />
         <Route path="/mylisting" element={<MyListing />} />
         <Route path="/meetings" element={<Meetings />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
   );

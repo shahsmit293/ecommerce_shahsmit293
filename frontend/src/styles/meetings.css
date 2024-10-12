@@ -1,0 +1,218 @@
+
+.meetings-container {
+  max-width: 1200px; /* Maximum width for the container */
+  margin: 0 auto; /* Center the container */
+  padding: 20px; /* Padding around the container */
+  background-color: #ffffff; /* White background */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow for some depth */
+  border-radius: 10px; /* Rounded corners */
+}
+
+
+.meetings-page-title {
+  text-align: center; /* Center align the title */
+  font-size: 24px; /* Font size */
+  font-weight: bold; /* Bold font */
+  margin-bottom: 20px; /* Space below the title */
+  color: #1a3eb3; /* Purple color for the title */
+}
+
+/* Subscription status message styling */
+.meetings-subscription-status {
+  text-align: center; /* Center align the message */
+  font-size: 16px; /* Font size */
+  margin-bottom: 20px; /* Space below the message */
+  color: #6c757d; /* Light grey color for the message */
+}
+
+/* Action button styling */
+.meetings-action-button {
+  display: block; /* Make the button block-level */
+  margin: 0 auto 20px auto; /* Center the button with space below */
+  padding: 10px 20px; /* Padding for the button */
+  background-color: #1a3eb3; /* Purple background */
+  color: #ffffff; /* White text color */
+  border: none; /* Remove default border */
+  border-radius: 20px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor */
+  font-weight: bold; /* Bold font */
+  font-size: 16px; /* Font size */
+  transition: background-color 0.3s ease; /* Smooth background color transition */
+}
+
+.meetings-action-button:hover {
+  background-color: #563d7c; /* Darker purple on hover */
+}
+
+/* Meetings table styling */
+.meetings-table {
+  width: 100%; /* Full width table */
+  border-collapse: collapse; /* Collapse table borders */
+  margin-top: 20px; /* Space above the table */
+}
+
+.meetings-table th,
+.meetings-table td {
+  padding: 12px 15px; /* Padding inside table cells */
+  text-align: center; /* Center align text in cells */
+  border: 1px solid #e0e0e0; /* Light grey border */
+  vertical-align: top; /* Align content to the top of the cell */
+}
+
+/* Column width and overflow styling for long content */
+.meetings-table th, .meetings-table td {
+  max-width: 200px; /* Set a max-width for the columns */
+  overflow: hidden; /* Hide overflow text */
+  text-overflow: ellipsis; /* Show ellipsis for overflowing text */
+  white-space: nowrap; /* Prevent wrapping */
+}
+
+/* Enable scrolling within cells */
+.meetings-table td {
+  overflow-y: auto; /* Allow vertical scrolling */
+  overflow-x: auto; /* Allow horizontal scrolling */
+  max-height: 100px; /* Set a max height for scrolling within cells */
+  position: relative;
+}
+
+/* Show scrollbars when hovering over the cell */
+.meetings-table td:hover {
+  overflow: auto; /* Enable scrolling on hover */
+}
+
+/* Table headers styling */
+.meetings-table th {
+  background-color: #f8f9fa; /* Light grey background for headers */
+  font-weight: bold; /* Bold font for headers */
+}
+
+/* Links within table cells */
+.meetings-table td a {
+  color: #1a3eb3; /* Purple color for links */
+  text-decoration: none; /* Remove underline */
+}
+
+.meetings-table td a:hover {
+  text-decoration: underline; /* Underline on hover */
+}
+
+/* Table buttons styling */
+.table-button {
+  padding: 8px 15px; /* Padding for buttons */
+  border: none; /* Remove default border */
+  border-radius: 20px; /* Rounded corners */
+  cursor: pointer; /* Pointer cursor */
+  font-weight: bold; /* Bold font */
+  font-size: 14px; /* Font size */
+  transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
+}
+
+.meetings-add-participant-button {
+  background-color: #1a3eb3; /* Purple background */
+  color: #ffffff; /* White text */
+}
+
+.meetings-add-participant-button:hover {
+  background-color: #563d7c; /* Darker purple on hover */
+}
+
+.meetings-delete-button {
+  background-color: #f8d7da; /* Light red background */
+  color: #842029; /* Dark red text */
+}
+
+.meetings-delete-button:hover {
+  background-color: #842029; /* Darker red on hover */
+  color: #ffffff; /* White text on hover */
+}
+
+/* No meetings message styling */
+.meetings-no-meetings {
+  text-align: center; /* Center align the message */
+  font-size: 16px; /* Font size */
+  margin-top: 20px; /* Space above the message */
+  color: #6c757d; /* Light grey color */
+}
+
+/* Email input styling */
+.meetings-email-input {
+  padding: 8px; /* Padding inside input */
+  border-radius: 5px; /* Rounded corners */
+  border: 1px solid #ccc; /* Light grey border */
+  margin-right: 10px; /* Space to the right */
+  width: calc(100% - 140px); /* Adjust width */
+}
+
+/* Error message styling */
+.meetings-error-message {
+  color: red; /* Red color for errors */
+  font-size: 14px; /* Smaller font size */
+  margin-top: 5px; /* Space above the message */
+}
+
+
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Full screen height to center the spinner */
+  font-size: 18px;
+  color: #555;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #000;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+      transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 992px) {
+  .meetings-table, .meetings-table tbody, .meetings-table tr, .meetings-table th, .meetings-table td {
+    display: block; /* Stack each row */
+    width: 100%; /* Full width for each block */
+  }
+
+  .meetings-table tr {
+    margin-bottom: 20px; /* Add space between each row */
+    border: 1px solid #1a3eb3; /* Add border around each row block */
+    border-radius: 12px;
+    padding: 16px; /* Add padding to row blocks */
+  }
+
+  .meetings-table th {
+    display: none; /* Hide table headers */
+  }
+
+  .meetings-table td {
+    padding: 10px 0; /* Add padding for clarity */
+    text-align: center;
+    border-bottom: 1px solid #e0e0e0; /* Separate key-value pairs */
+  }
+
+  .meetings-table td::before {
+    content: attr(data-label); /* Use the data-label attribute for key names */
+    font-weight: bold; /* Make key labels bold */
+    color: #1a3eb3; /* Add color to key labels */
+    text-transform: uppercase;
+  }
+
+  /* Hide the last border for the last key-value pair */
+  .meetings-table tr:last-child td:last-child {
+    border-bottom: none;
+  }
+
+  .meetings-table td.meetings-actions {
+    gap: 10px; /* Space between action buttons */
+    justify-content: center;
+  }
+}

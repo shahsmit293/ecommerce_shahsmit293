@@ -1,0 +1,266 @@
+/* Table Container Styling */
+.listing-table-container {
+  max-width: 1200px; /* Center align the table */
+  margin: 20px auto; /* Center align and add vertical margin */
+  background-color: #fff; /* White background */
+  border-radius: 12px; /* Softer rounded corners */
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  padding: 20px; /* Padding around the table */
+  overflow: auto; /* Clip overflowing content */
+}
+
+/* Table Styling */
+.listing-table {
+  width: 100%; /* Full width */
+  border-collapse: collapse; /* Collapse table borders */
+  font-family: 'Arial', sans-serif; /* Modern font */
+  color: #333; /* Darker text color */
+}
+
+.listing-table th, .listing-table td {
+  padding: 16px; /* Spacing within cells */
+  text-align: left; /* Left-align text */
+  border-bottom: 1px solid #e0e0e0; /* Bottom border for table rows */
+}
+
+.listing-table th {
+  background-color: #f4f6f8; /* Light gray background for header */
+  font-weight: 600; /* Slightly thicker text for header */
+  color: #1a3eb3; /* Modern blue color for header */
+  text-transform: uppercase; /* Uppercase for modern style */
+  letter-spacing: 1px; /* Slight letter-spacing */
+  border-bottom: 2px solid #e0e0e0; /* Thicker border for header */
+}
+
+.listing-table tr {
+  background-color: #ffffff; /* Default row background */
+  transition: background-color 0.3s ease; /* Smooth transition on hover */
+}
+
+.listing-table tr:hover {
+  background-color: #f1f4ff; /* Light blue background on row hover */
+}
+
+.listing-table td {
+  font-size: 15px; /* Font size for table data */
+  color: #555; /* Slightly darker color for table data */
+  line-height: 1.6; /* Increased line-height for readability */
+}
+
+/* Last row styling */
+.listing-table tr:last-child td {
+  border-bottom: none; /* No bottom border for the last row */
+}
+
+/* Action buttons in table */
+.listing-table td.listing-actions {
+  gap: 10px; /* Space between action buttons */
+  justify-content: flex-start;
+}
+
+/* Button Styling */
+.listing-view-button, .listing-delete-button, .listing-edit-button {
+  padding: 10px 20px; /* More padding for emphasis */
+  border: none;
+  border-radius: 30px; /* Rounded pill shape for buttons */
+  font-size: 14px; /* Font size */
+  cursor: pointer; /* Pointer cursor on hover */
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth hover effect */
+}
+
+/* View Button Styling */
+.listing-view-button {
+  background-color: #1a3eb3; /* Blue color */
+  color: #fff; /* White text */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for buttons */
+}
+
+.listing-view-button:hover {
+  background-color: #142c8b; /* Darker blue on hover */
+  transform: translateY(-2px); /* Slight lift effect on hover */
+}
+
+/* Edit Button Styling */
+.listing-edit-button {
+  background-color: #1a3eb3; /* Blue color */
+  color: #fff; /* White text */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* White text */
+}
+
+.listing-edit-button:hover {
+  background-color: #142c8b; /* Darker blue on hover */
+  transform: translateY(-2px); /* Slight lift effect on hover */
+}
+
+/* Delete Button Styling */
+.listing-delete-button {
+  background-color: #1a3eb3; /* Blue color */
+  color: #fff; /* White text */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Darker text color */
+}
+
+.listing-delete-button:hover {
+  background-color: #142c8b; /* Darker blue on hover */
+  transform: translateY(-2px); /* Slight lift effect on hover */
+}
+
+/* Modal Styles */
+.custom-modal {
+  position: fixed; /* Ensure modal is fixed relative to the viewport */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh; /* Fullscreen */
+  background-color: rgba(0, 0, 0, 0.5); /* Overlay effect */
+  display: flex;
+  align-items: center; /* Center vertically */
+  justify-content: center; /* Center horizontally */
+  z-index: 9999;
+}
+
+.modal-dialog {
+  max-width: 500px;
+}
+
+.modal-content {
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.modal-header {
+  background-color: #0c5719;
+  color: white;
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header .modal-title {
+  font-size: 18px;
+  margin: 0;
+}
+
+.modal-header .close {
+  font-size: 24px;
+  color: white;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-weight: bold;
+}
+
+.form-control {
+  border-radius: 5px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.custom-btn {
+  background-color: #0c5719;
+  border: none;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  width: 100%;
+  font-size: 16px;
+}
+
+.custom-btn:hover {
+  background-color: #0056b3;
+}
+
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Full screen height to center the spinner */
+  font-size: 18px;
+  color: #555;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #000;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+      transform: rotate(360deg);
+  }
+}
+
+
+@media (max-width: 992px) {
+  .listing-table, .listing-table tbody, .listing-table tr, .listing-table th, .listing-table td {
+    display: block; /* Stack each row */
+    width: 100%; /* Full width for each block */
+  }
+
+  .listing-table tr {
+    margin-bottom: 20px; /* Add space between each row */
+    border: 1px solid #1a3eb3; /* Add border around each row block */
+    border-radius: 12px;
+    padding: 16px; /* Add padding to row blocks */
+  }
+
+  .listing-table th {
+    display: none; /* Hide table headers visually */
+  }
+
+  .listing-table td {
+    display: flex; /* Display key-value pair in a row */
+    justify-content: space-between; /* Align key and value */
+    padding: 10px 0; /* Add padding for clarity */
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0; /* Separate key-value pairs */
+  }
+
+  .listing-table td::before {
+    content: attr(data-label); /* Use the data-label attribute for key names */
+    font-weight: bold; /* Make key labels bold */
+    color: #1a3eb3; /* Add color to key labels */
+    text-transform: uppercase;
+    margin-right: 10px; /* Add some space between key and value */
+  }
+
+  /* Hide the last border for the last key-value pair */
+  .listing-table tr:last-child td:last-child {
+    border-bottom: none;
+  }
+
+  .listing-table td.listing-actions {
+    display: flex;
+    gap: 10px; /* Space between action buttons */
+    justify-content: center;
+  }
+
+  .listing-view-button, .listing-delete-button {
+    width: 100%; /* Full-width buttons */
+    max-width: 200px; /* Limit max width */
+    margin-bottom: 10px; /* Space between buttons */
+    text-align: center;
+  }
+}

@@ -45,8 +45,13 @@ const getState = ({ getStore, getActions, setStore }) => {
             meetingserror:null
         },
         actions: {
+            // In flux.js or wherever your actions are defined
+
             login: async (useremail, password) => {
                 try {
+                    // Clear previous errors
+                    setStore({ error: null });
+
                     const command = new InitiateAuthCommand({
                         AuthFlow: "USER_PASSWORD_AUTH",
                         ClientId: clientId,
@@ -58,11 +63,13 @@ const getState = ({ getStore, getActions, setStore }) => {
 
                     const response = await client.send(command);
                     const accessToken = response.AuthenticationResult.AccessToken;
+
                     Cookies.set("accessToken", accessToken, {
                         expires: 1,       // Cookie expires in 1 day
                         path: '/',        // Cookie is available throughout the site
-                        sameSite: 'Lax' // Adjust as needed for cross-origin requests
+                        sameSite: 'Lax'   // Adjust as needed for cross-origin requests
                     });
+
                     setStore({ token: accessToken });
 
                     const user = await getActions().getUserAttributes(accessToken);
@@ -71,13 +78,19 @@ const getState = ({ getStore, getActions, setStore }) => {
                     const userid = await getActions().getUserIdByEmail(useremail);
 
                     await getActions().getStreamToken(userid);
-                    await getActions().getChannels(userid)
+                    await getActions().getChannels(userid);
+
+                    // Clear error and indicate success
+                    setStore({ error: null });
+                    return true;
 
                 } catch (err) {
                     setStore({ error: err.message });
                     console.error(err);
+                    throw err; // Throw error to be caught in handleLogin
                 }
             },
+
             
             
             getUserAttributes: async (accessToken) => {
@@ -135,19 +148,21 @@ const getState = ({ getStore, getActions, setStore }) => {
                         ClientId: clientId,
                         Username: email,
                         Password: password,
-                        UserAttributes: [
-                            { Name: 'email', Value: email }
-                        ]
+                        UserAttributes: [{ Name: 'email', Value: email }]
                     });
-
+            
                     const response = await client.send(command);
-                    console.log("Signup Successful:", response);
-                    // Optionally, handle success: navigate to another page, show a success message, etc.
+                    console.log('Signup Successful:', response);
+                    // Return true on success
+                    return true;
                 } catch (err) {
                     setStore({ signuperror: err.message });
-                    console.error("Signup Error:", err);
+                    console.error('Signup Error:', err);
+                    // Return error message to handle in the UI
+                    return err.message;
                 }
             },
+            
 
             confirmSignup: async (email, verificationCode) => {
                 try {
@@ -156,17 +171,18 @@ const getState = ({ getStore, getActions, setStore }) => {
                         Username: email,
                         ConfirmationCode: verificationCode,
                     });
-
+            
                     const response = await client.send(command);
                     console.log("Signup confirmed:", response);
-
+            
                     // Only call insertEmailToDatabase if there were no errors
                     await getActions().insertEmailToDatabase(email);
-
-                    // Optionally, handle successful confirmation: redirect, show success message, etc.
+            
+                    // Return success
+                    return true;
                 } catch (err) {
-                    setStore({ error: err.message });
                     console.error("Confirmation Error:", err);
+                    return err.message;
                 }
             },
 
@@ -200,15 +216,17 @@ const getState = ({ getStore, getActions, setStore }) => {
                         ClientId: clientId,
                         Username: email,
                     });
-
+            
                     const response = await client.send(command);
                     console.log("Forgot Password Initiated:", response);
-                    // Optionally, handle success: navigate to another page, show a success message, etc.
+            
+                    return { success: true }; // Return success if the command was successful
                 } catch (err) {
-                    setStore({ error: err.message });
                     console.error("Forgot Password Error:", err);
+                    return { error: err.message }; // Return error if the command fails
                 }
             },
+            
 
             confirmForgotPassword: async (email, verificationCode, newPassword) => {
                 try {
@@ -221,10 +239,10 @@ const getState = ({ getStore, getActions, setStore }) => {
 
                     const response = await client.send(command);
                     console.log("Password Reset Successful:", response);
-                    // Optionally, handle success: navigate to another page, show a success message, etc.
+                    return true;
                 } catch (err) {
-                    setStore({ error: err.message });
                     console.error("Password Reset Error:", err);
+                    return err.message || "An error occurred while resetting the password";
                 }
             },
 
@@ -394,43 +412,50 @@ const getState = ({ getStore, getActions, setStore }) => {
                     throw error;
                 }
             },
-            getStreamToken : async (activeuserid) => {
+            getStreamToken: async (activeuserid) => {
                 try {
-                    const response = await fetch(`${backend}get_stream_token`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ activeuserid: String(activeuserid) })
-                    });
-            
-                    if (!response.ok) {
-                        throw new Error('Failed to get Stream token');
-                    }
-            
-                    const data = await response.json();
-                    console.log('Token payload:', data.token);
-            
-                    const chatClient = getStore().chatClient || StreamChat.getInstance(apiKey);
-            
-                    if (chatClient.userID) {
-                        await chatClient.disconnectUser();
-                    }
-
-         
+                  // Fetch stream token from the backend
+                  const response = await fetch(`${backend}get_stream_token`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ activeuserid: String(activeuserid) })
+                  });
+              
+                  if (!response.ok) {
+                    throw new Error('Failed to get Stream token');
+                  }
+              
+                  const data = await response.json();
+                  console.log('Token payload:', data.token);
+              
+                  const chatClient = getStore().chatClient || StreamChat.getInstance(apiKey);
+              
+                  // Avoid disconnecting if the user is already connected
+                  if (chatClient.userID === String(activeuserid)) {
+                    console.log('User already connected:', chatClient.userID);
+                  } else {
+                    console.log('User not connected or different user. Connecting...');
+              
+                    // Connect the user with the retrieved token
                     await chatClient.connectUser(
-                        { id: String(activeuserid) },
-                        data.token
+                      { id: String(activeuserid) },
+                      data.token
                     );
-                    
-                    console.log(chatClient)
-                    setStore({ streamToken: data.token, chatClient});
-            
+              
+                    console.log('User connected to chat client:', chatClient);
+                  }
+              
+                  // Update the store with the new streamToken and chatClient
+                  setStore({ streamToken: data.token, chatClient });
+              
                 } catch (error) {
-                    console.error('Error fetching Stream token:', error);
-                    throw error;
+                  console.error('Error fetching Stream token:', error);
+                  throw error;
                 }
-            },
+              },
+              
             checkAndCreateChannel: async (activeuserid, targetuserid) => {
                 try {
                     const response = await fetch(`${backend}check_and_create_channel`, {
@@ -708,27 +733,28 @@ const getState = ({ getStore, getActions, setStore }) => {
 
             fetchFilteredPhones: async (filters) => {
                 try {
-                    const queryString = new URLSearchParams(filters).toString();
-                    const response = await fetch(`${backend}filter-phones?${queryString}`, {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                    });
-            
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.error || "Failed to fetch filtered phones");
-                    }
-            
-                    const data = await response.json();
-                    setStore({ filteredPhones: data.phones });
-                    return data.phones;
+                  const queryString = new URLSearchParams(filters).toString();
+                  const response = await fetch(`${backend}filter-phones?${queryString}`, {
+                    method: "GET",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                  });
+              
+                  if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || "Failed to fetch filtered phones");
+                  }
+              
+                  const data = await response.json();
+                  setStore({ filteredPhones: data.phones });
+                  return data.phones;
                 } catch (error) {
-                    console.error("Error fetching filtered phones:", error);
-                    throw error;
+                  console.error("Error fetching filtered phones:", error);
+                  throw error;
                 }
-            },
+              },
+              
             
             getalllistingphone: async (sellerid) => {
                 try {

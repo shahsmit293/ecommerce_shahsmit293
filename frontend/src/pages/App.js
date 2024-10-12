@@ -1,4 +1,3 @@
-// App.js
 import React, { useContext, useState, useEffect } from 'react';
 import { Context } from '../store/appContext';
 import { useNavigate } from 'react-router-dom';
@@ -13,15 +12,19 @@ const App = () => {
     color: '',
     storage: '',
     model: '',
+    sort: ''
   });
+  const [loading, setLoading] = useState(true); // Loading state
 
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchFavorite = async () => {
+      setLoading(true); // Set loading true when data fetching starts
       if (store.token) {
         await actions.getFavorite(store.activeuserid);
       }
+      setLoading(false); // Set loading false when data fetching is complete
     };
 
     fetchFavorite();
@@ -40,13 +43,20 @@ const App = () => {
   };
 
   return (
-    <div className='mainpage'>
-      <Filter selectedFilters={selectedFilters} setSelectedFilters={setSelectedFilters} onFilter={handleFilterAction} />
-      <div className="App">
-        {store.phones ? (
+    <div className="app-container">
+      <div className="filter-sidebar">
+        <Filter selectedFilters={selectedFilters} setSelectedFilters={setSelectedFilters} onFilter={handleFilterAction} />
+      </div>
+
+      <div className="phone-list-container">
+        {loading ? (
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+          </div>
+        ) : store.phones ? (
           <PhoneCard phones={store.phones} favorites={store.allfavorites} />
         ) : (
-          <div>No phones available at the moment.</div>
+          <div className="no-phones-message">No phones available at the moment.</div>
         )}
       </div>
     </div>

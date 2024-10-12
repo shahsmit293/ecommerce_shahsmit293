@@ -1,0 +1,140 @@
+/* Table Container Styling */
+.table-container {
+  max-width: 1200px;
+  margin: 20px auto;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  overflow-x: auto; /* Enable horizontal scroll for smaller screens */
+}
+
+/* Table Styling */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th, .table td {
+  padding: 15px;
+  text-align: left;
+}
+
+.table th {
+  background-color: #f9f9f9;
+  font-weight: bold;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.table tr {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.table tr:last-child {
+  border-bottom: none;
+}
+
+.table td {
+  color: #555;
+}
+
+.table td.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Responsive Table for Small Screens */
+@media (max-width: 992px) {
+  .table-container {
+      padding: 10px; /* Reduce padding for smaller screens */
+  }
+
+  .table th, .table td {
+      padding: 10px; /* Reduce padding inside cells */
+  }
+
+  .table td.actions {
+      gap: 5px;
+  }
+
+  /* Stacked table for mobile screens */
+  .table,
+  .table thead,
+  .table tbody,
+  .table th,
+  .table td,
+  .table tr {
+      display: block;
+  }
+
+  .table tr {
+      margin-bottom: 15px; /* Add spacing between rows */
+  }
+
+  .table td {
+      text-align: right;
+      position: relative;
+      padding-left: 50%; /* Adjust padding for label alignment */
+      white-space: pre-wrap;
+  }
+
+  .table td:before {
+      content: attr(data-label); /* Add data-label for mobile view */
+      position: absolute;
+      left: 15px;
+      top: 15px;
+      white-space: nowrap;
+      font-weight: bold;
+  }
+
+  .table th {
+      display: none; /* Hide table headers on mobile */
+  }
+}
+
+/* Button Styling */
+.table-button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+.delete-button {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.delete-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* cart.css */
+.loading-spinner {
+display: flex;
+justify-content: center;
+align-items: center;
+height: 100vh;
+font-size: 18px;
+color: #555;
+}
+
+.spinner {
+border: 4px solid rgba(0, 0, 0, 0.1);
+border-left-color: #000;
+border-radius: 50%;
+width: 40px;
+height: 40px;
+animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+to {
+    transform: rotate(360deg);
+}
+}

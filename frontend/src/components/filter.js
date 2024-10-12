@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
-
+import React, { useContext, useEffect } from 'react';
+import '../styles/filter.css'
+import { Context } from '../store/appContext';
 const Filter = ({ selectedFilters, setSelectedFilters, onFilter }) => {
+  const {store, actions} = useContext(Context)
   const phoneData = {
     'iPhone 11': {
     colors: ['Black', 'Green', 'Yellow', 'Purple', '(PRODUCT)RED', 'White'],
@@ -247,6 +249,7 @@ const Filter = ({ selectedFilters, setSelectedFilters, onFilter }) => {
       color: params.get('color') || '',
       storage: params.get('storage') || '',
       model: params.get('model') || '',
+      sort: params.get('sort') || ''
     });
   }, []);
 
@@ -257,14 +260,15 @@ const Filter = ({ selectedFilters, setSelectedFilters, onFilter }) => {
       color: '',
       storage: '',
       model: '',
+      sort: ''
     });
-    window.history.pushState(null, '', '/'); // Push a state with no filters
-    onFilter(); // Call the filter function after resetting
+    store.filteredPhones=[]
+    window.history.pushState(null, '', '/');  // Push a state with no filters
   };
 
   return (
-    <div className="filter">
-      <div className="filter-item">
+    <div className="filter-bar">
+      <div className="filter-dropdown">
         <label htmlFor="phonetype">Phone Type:</label>
         <select
           id="phonetype"
@@ -281,7 +285,16 @@ const Filter = ({ selectedFilters, setSelectedFilters, onFilter }) => {
       </div>
       {selectedFilters.phonetype && (
         <>
-          <div className="filter-item">
+          <div className="filter-dropdown">
+            <label htmlFor="sort">Sort By Price:</label>
+            <select id="sort" value={selectedFilters.sort} onChange={(e) => setSelectedFilters({ ...selectedFilters, sort: e.target.value })}>
+              <option value="">None</option>
+              <option value="asc">Lowest to Highest</option>
+              <option value="desc">Highest to Lowest</option>
+            </select>
+          </div>
+
+          <div className="filter-dropdown">
             <label htmlFor="color">Color:</label>
             <select
               id="color"
@@ -297,7 +310,7 @@ const Filter = ({ selectedFilters, setSelectedFilters, onFilter }) => {
             </select>
           </div>
 
-          <div className="filter-item">
+          <div className="filter-dropdown">
             <label htmlFor="storage">Storage:</label>
             <select
               id="storage"
@@ -313,7 +326,7 @@ const Filter = ({ selectedFilters, setSelectedFilters, onFilter }) => {
             </select>
           </div>
 
-          <div className="filter-item">
+          <div className="filter-dropdown">
             <label htmlFor="model">Model Number:</label>
             <select
               id="model"
@@ -331,8 +344,8 @@ const Filter = ({ selectedFilters, setSelectedFilters, onFilter }) => {
         </>
       )}
       <div className="filter-actions">
-        <button className="apply-filter" onClick={onFilter}>Apply Filter</button>
-        <button className="reset-filter" onClick={handleResetFilter}>Reset Filter</button>
+        <button className="select-button" onClick={onFilter}>Apply Filter</button>
+        <button className="reset-button" onClick={handleResetFilter}>Reset Filter</button>
       </div>
     </div>
   );

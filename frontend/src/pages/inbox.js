@@ -23,7 +23,7 @@ const Inbox = () => {
         setTimeout(() => {
           setLoading(false);
           setShowChat(true);
-        }, 8000);
+        }, 3000);
       }
     };
 
@@ -31,8 +31,12 @@ const Inbox = () => {
   }, [store.activeuserid]);
 
   if (loading) {
-    return <div>Setting up client & connection...</div>;
-  }
+    return (
+        <div className="loading-spinner">
+            <div className="spinner"></div>
+        </div>
+    );
+}
 
   const filters = { type: 'messaging', members: { $in: [String(store.activeuserid)] } };
   const sort = { last_message_at: -1 };

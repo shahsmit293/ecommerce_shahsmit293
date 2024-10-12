@@ -1,6 +1,9 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Context } from "../store/appContext";
 import { useNavigate } from "react-router-dom";
+import '../styles/mylisting.css'; // Import the CSS file for table styles
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faTrashAlt, faEdit, faDollarSign, faEnvelope } from '@fortawesome/free-solid-svg-icons'; // Import specific icons
 
 const MyListing = () => {
     const { store, actions } = useContext(Context);
@@ -13,6 +16,7 @@ const MyListing = () => {
     const [oldPayPalEmail, setOldPayPalEmail] = useState(''); // State for old PayPal email
     const [newPayPalEmail, setNewPayPalEmail] = useState(''); // State for new PayPal email
     const navigate = useNavigate();
+    
 
     useEffect(() => {
         if (!store.activeuserid) {
@@ -27,9 +31,20 @@ const MyListing = () => {
 
         fetchPhone();
     }, [store.activeuserid]);
-
+    if (!store.token) {
+        return (
+          <div>
+            Please log in to view this page.
+            <button onClick={() => navigate('/login')}>Login</button>
+          </div>
+        );
+      }
     if (loading) {
-        return <div>Loading...</div>;
+        return (
+            <div className="loading-spinner">
+                <div className="spinner"></div>
+            </div>
+        );
     }
 
     if (!store.alllistedphones || store.alllistedphones.length === 0) {
@@ -86,74 +101,63 @@ const MyListing = () => {
     };
 
     return (
-        <div>
-            <h1>Phone Details</h1>
-            {store.alllistedphones.map((phone) => (
-                <div key={phone.id} className="col-lg-4 col-md-6 mb-4">
-                    <div className="card h-100">
-                        <div className="card-body">
-                            <h5 className="card-title">{phone.model}</h5>
-                            <p className="card-text">
-                                <strong>Price:</strong> ${phone.price}
-                            </p>
-                            <p className="card-text">
-                                <strong>Type:</strong> {phone.phonetype}
-                            </p>
-                            <p className="card-text">
-                                <strong>Color:</strong> {phone.color}
-                            </p>
-                            <p className="card-text">
-                                <strong>Storage:</strong> {phone.storage}
-                            </p>
-                            <p className="card-text">
-                                <strong>Carrier:</strong> {phone.carrier}
-                            </p>
-                            <p className="card-text">
-                                <strong>Condition:</strong> {phone.condition}
-                            </p>
-                            <p className="card-text">
-                                <strong>Seller:</strong> {phone.seller}
-                            </p>
-                            <p className="card-text">
-                                <strong>Location:</strong> {phone.location}
-                            </p>
-                            <p className="card-text">
-                                <strong>IMEI:</strong> {phone.IMEI}
-                            </p>
-                            <p className="card-text">
-                                <strong>User Email:</strong> {phone.user_email}
-                            </p>
-                            <p className="card-text">
-                                <strong>PayPal Email:</strong> {phone.paypal_email}
-                            </p>
-                            <button
-                                className="btn btn-primary"
-                                onClick={() => handleView(phone.id)}
-                            >
-                                <strong>View</strong>
-                            </button>
-                            
-                            {store.allsold.some((item) => item.phone_sell_id === phone.id) ? (
-                                <p>Sold Out</p>
-                            ) : (
-                            <>
-                            <button className="btn btn-primary" onClick={() => deletePhone(phone.id)}>
-                                <strong>Delete this listing</strong>
-                            </button>
-                            <button className="btn btn-primary" onClick={() => openEditPriceModal(phone)}>
-                                <strong>Edit Price</strong>
-                            </button>
-                            <button className="btn btn-primary" onClick={() => openEditEmailModal(phone)}>
-                                <strong>Edit PayPal Email</strong>
-                            </button>
-                            </>)}
-                        </div>
-                    </div>
-                </div>
-            ))}
+        <div className="listing-table-container">
+            <h2>My Listings</h2>
+            <table className="listing-table">
+                <thead>
+                    <tr>
+                        <th>Model</th>
+                        <th>Price</th>
+                        <th>Type</th>
+                        <th>Color</th>
+                        <th>Storage</th>
+                        <th>Carrier</th>
+                        <th>IMEI</th>
+                        <th>PayPal Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {store.alllistedphones.map((phone) => (
+                        <tr key={phone.id}>
+                            <td data-label="Model">{phone.model}</td>
+                            <td data-label="Price">${phone.price}</td>
+                            <td data-label="Type">{phone.phonetype}</td>
+                            <td data-label="Color">{phone.color}</td>
+                            <td data-label="Storage">{phone.storage}</td>
+                            <td data-label="Carrier">{phone.carrier}</td>
+                            <td data-label="IMEI">{phone.IMEI}</td>
+                            <td data-label="PayPal Email">{phone.paypal_email}</td>
+                            <td className="listing-actions">
+                                <button 
+                                    className="listing-view-button" 
+                                    onClick={() => handleView(phone.id)}>
+                                    <FontAwesomeIcon icon={faEye} />
+                                </button>
+                                <button 
+                                    className="listing-delete-button" 
+                                    onClick={() => deletePhone(phone.id)}>
+                                    <FontAwesomeIcon icon={faTrashAlt} />
+                                </button>
+                                <button 
+                                    className="listing-edit-button" 
+                                    onClick={() => openEditPriceModal(phone)}>
+                                    <FontAwesomeIcon icon={faDollarSign} />
+                                </button>
+                                <button 
+                                    className="listing-edit-button" 
+                                    onClick={() => openEditEmailModal(phone)}>
+                                    <FontAwesomeIcon icon={faEnvelope} />
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
 
+            {/* Price Edit Modal */}
             {showPriceModal && (
-                <div className="modal show" style={{ display: 'block' }}>
+                <div className="modal show custom-modal" style={{ display: 'block' }}>
                     <div className="modal-dialog">
                         <div className="modal-content">
                             <div className="modal-header">
@@ -183,7 +187,7 @@ const MyListing = () => {
                                             required
                                         />
                                     </div>
-                                    <button type="submit" className="btn btn-primary">
+                                    <button type="submit" className="btn btn-primary custom-btn">
                                         Update Price
                                     </button>
                                 </form>
@@ -193,8 +197,9 @@ const MyListing = () => {
                 </div>
             )}
 
+            {/* PayPal Email Edit Modal */}
             {showEmailModal && (
-                <div className="modal show" style={{ display: 'block' }}>
+                <div className="modal show custom-modal" style={{ display: 'block' }}>
                     <div className="modal-dialog">
                         <div className="modal-content">
                             <div className="modal-header">
@@ -224,7 +229,7 @@ const MyListing = () => {
                                             required
                                         />
                                     </div>
-                                    <button type="submit" className="btn btn-primary">
+                                    <button type="submit" className="btn btn-primary custom-btn">
                                         Update PayPal Email
                                     </button>
                                 </form>
@@ -233,6 +238,7 @@ const MyListing = () => {
                     </div>
                 </div>
             )}
+
         </div>
     );
 };

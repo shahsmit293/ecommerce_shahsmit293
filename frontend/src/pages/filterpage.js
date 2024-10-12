@@ -18,6 +18,7 @@ const FilterPage = () => {
       color: params.get('color') || '',
       storage: params.get('storage') || '',
       model: params.get('model') || '',
+      sort: params.get('sort') || ''
     };
   };
 
@@ -62,20 +63,22 @@ const FilterPage = () => {
   };
 
   return (
-    <div className='mainpage'>
-      <Filter
-        selectedFilters={selectedFilters}
-        setSelectedFilters={(filters) => {
-          setSelectedFilters(filters);
-          updateSearchParams(filters); // Update URL when filters change
-        }}
-        onFilter={() => actions.fetchFilteredPhones(selectedFilters)}
-      />
-      <div className="App">
+    <div className="app-container"> {/* Use same container class */}
+      <div className="filter-sidebar">
+        <Filter
+          selectedFilters={selectedFilters}
+          setSelectedFilters={(filters) => {
+            setSelectedFilters(filters);
+            updateSearchParams(filters); // Update URL when filters change
+          }}
+          onFilter={() => actions.fetchFilteredPhones(selectedFilters)}
+        />
+      </div>
+      <div className="phone-list-container">
         {store.filteredPhones ? (
           <PhoneCard phones={store.filteredPhones} favorites={store.allfavorites} />
         ) : (
-          <div>No phones available at the moment.</div>
+          <div className="no-phones-message">No phones available at the moment.</div>
         )}
       </div>
     </div>

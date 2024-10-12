@@ -91,7 +91,9 @@ const PersonalChat = () => {
   }, [store]);
 
   if (loading || !store.chatClient || !store.channel) {
-    return <div>Setting up client & connection...</div>;
+    return (<div className="loading-spinner">
+    <div className="spinner"></div>
+</div>);
   }
 
   // const filters = { id: store.channel.id };

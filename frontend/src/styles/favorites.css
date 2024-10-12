@@ -1,0 +1,172 @@
+/* Table Container Styling */
+.fav-table-container {
+  max-width: 1200px; /* Center align the table */
+  margin: 20px auto; /* Center align and add vertical margin */
+  background-color: #fff; /* White background */
+  border-radius: 12px; /* Softer rounded corners */
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  padding: 20px; /* Padding around the table */
+  overflow: auto; /* Clip overflowing content */
+}
+
+/* Table Styling */
+.fav-table {
+  width: 100%; /* Full width */
+  border-collapse: collapse; /* Collapse table borders */
+  font-family: 'Arial', sans-serif; /* Modern font */
+  color: #333; /* Darker text color */
+}
+
+.fav-table th, .fav-table td {
+  padding: 16px; /* Spacing within cells */
+  text-align: left; /* Left-align text */
+  border-bottom: 1px solid #e0e0e0; /* Bottom border for table rows */
+}
+
+.fav-table th {
+  background-color: #f4f6f8; /* Light gray background for header */
+  font-weight: 600; /* Slightly thicker text for header */
+  color: #1a3eb3; /* Modern blue color for header */
+  text-transform: uppercase; /* Uppercase for modern style */
+  letter-spacing: 1px; /* Slight letter-spacing */
+  border-bottom: 2px solid #e0e0e0; /* Thicker border for header */
+}
+
+.fav-table tr {
+  background-color: #ffffff; /* Default row background */
+  transition: background-color 0.3s ease; /* Smooth transition on hover */
+}
+
+.fav-table tr:hover {
+  background-color: #f1f4ff; /* Light blue background on row hover */
+}
+
+.fav-table td {
+  font-size: 15px; /* Font size for table data */
+  color: #555; /* Slightly darker color for table data */
+  line-height: 1.6; /* Increased line-height for readability */
+}
+
+/* Last row styling */
+.fav-table tr:last-child td {
+  border-bottom: none; /* No bottom border for the last row */
+}
+
+/* Action buttons in table */
+.fav-table td.fav-actions {
+  display: flex; /* Flex layout for buttons */
+  gap: 10px; /* Space between action buttons */
+  justify-content: flex-start;
+}
+
+/* Button Styling */
+.fav-view-button, .fav-delete-button {
+  padding: 10px 20px; /* More padding for emphasis */
+  border: none;
+  border-radius: 30px; /* Rounded pill shape for buttons */
+  font-size: 14px; /* Font size */
+  cursor: pointer; /* Pointer cursor on hover */
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.2s ease; /* Smooth hover effect */
+}
+
+/* View Button Styling */
+.fav-view-button {
+  background-color: #1a3eb3; /* Blue color */
+  color: #fff; /* White text */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for buttons */
+}
+
+.fav-view-button:hover {
+  background-color: #142c8b; /* Darker blue on hover */
+  transform: translateY(-2px); /* Slight lift effect on hover */
+}
+
+/* Delete Button Styling */
+.fav-delete-button {
+  background-color: #f5f5f5; /* Light gray background */
+  color: #333; /* Darker text color */
+}
+
+.fav-delete-button:hover {
+  background-color: #e0e0e0; /* Darker gray on hover */
+  transform: translateY(-2px); /* Slight lift effect on hover */
+}
+
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh; /* Full screen height to center the spinner */
+  font-size: 18px;
+  color: #555;
+}
+
+.spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-left-color: #000;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+      transform: rotate(360deg);
+  }
+}
+
+
+@media (max-width: 992px) {
+  .fav-table, .fav-table tbody, .fav-table tr, .fav-table th, .fav-table td {
+    display: block; /* Stack each row */
+    width: 100%; /* Full width for each block */
+  }
+
+  .fav-table tr {
+    margin-bottom: 20px; /* Add space between each row */
+    border: 1px solid #1a3eb3; /* Add border around each row block */
+    border-radius: 12px;
+    padding: 16px; /* Add padding to row blocks */
+  }
+
+  .fav-table th {
+    display: none; /* Hide table headers visually */
+  }
+
+  .fav-table td {
+    display: flex; /* Display key-value pair in a row */
+    justify-content: space-between; /* Align key and value */
+    padding: 10px 0; /* Add padding for clarity */
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0; /* Separate key-value pairs */
+  }
+
+  .fav-table td::before {
+    content: attr(data-label); /* Use the data-label attribute for key names */
+    font-weight: bold; /* Make key labels bold */
+    color: #1a3eb3; /* Add color to key labels */
+    text-transform: uppercase;
+    margin-right: 10px; /* Add some space between key and value */
+  }
+
+  /* Hide the last border for the last key-value pair */
+  .fav-table tr:last-child td:last-child {
+    border-bottom: none;
+  }
+
+  .fav-table td.fav-actions {
+    display: flex;
+    gap: 10px; /* Space between action buttons */
+    justify-content: center;
+  }
+
+  .fav-view-button, .fav-delete-button {
+    width: 100%; /* Full-width buttons */
+    max-width: 200px; /* Limit max width */
+    margin-bottom: 10px; /* Space between buttons */
+    text-align: center;
+  }
+}

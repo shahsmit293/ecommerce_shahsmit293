@@ -1,0 +1,241 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0; /* Remove default margin */
+    padding: 0; /* Remove default padding */
+}
+
+/* Main Container */
+.login-container {
+    display: flex;
+    height: 100vh;
+    justify-content: space-between;
+}
+
+/* Left Side Styling */
+.login-left {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff;
+}
+
+.login-image {
+    max-width: 100%;
+    height: -webkit-fill-available; /* Responsive Image */
+}
+
+.login-right {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #1a3eb3; /* Blue Background */
+    padding: 20px;
+}
+
+/* Form Container */
+.form-container {
+    max-width: 400px;
+    width: 100%;
+    padding: 2rem;
+    background-color: #ffffff; /* White Background for Form */
+    border-radius: 10px; /* Rounded Corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Light Shadow */
+    text-align: center;
+}
+
+/* Form Heading */
+.form-container h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #1a3eb3; /* Blue Text */
+}
+
+/* Form Subtext */
+.form-container p {
+    margin-bottom: 1.5rem;
+    color: #6c757d; /* Light Grey Text */
+}
+
+/* Input Fields */
+.input-group {
+    margin-bottom: 1rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.login-button, .signup-button {
+    width: 100%;
+    padding: 12px;
+    background-color: #1a3eb3; /* Blue Background */
+    border: none;
+    border-radius: 5px;
+    color: #ffffff; /* White Text */
+    font-size: 1rem;
+    font-weight: bold; /* Bold Text */
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Smooth Transition */
+}
+
+.login-button:hover, .signup-button:hover {
+    background-color: #142c8b; /* Darker Blue on Hover */
+}
+
+/* Forgot Password Link */
+.forgot-password {
+    margin-top: 0.5rem;
+}
+
+.forgot-password button {
+    background: none;
+    border: none;
+    color: #1a3eb3; /* Blue Text */
+    font-size: 0.9rem; /* Smaller Text */
+    cursor: pointer;
+    transition: color 0.3s ease; /* Smooth Transition */
+}
+
+.forgot-password button:hover {
+    color: #142c8b; /* Darker Blue on Hover */
+}
+
+/* Signup Section */
+.signup-section {
+    margin-top: 2rem;
+}
+
+.signup-section h2 {
+    font-size: 1.5rem;
+    color: #1a3eb3; /* Blue Text */
+    margin-bottom: 0.5rem;
+}
+
+.signup-section p {
+    margin-bottom: 1rem;
+    color: #6c757d; /* Light Grey Text */
+}
+
+/* Additional Sections */
+.forgot-section, .reset-section {
+    margin-top: 2rem;
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 10px; /* Rounded Corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Light Shadow */
+}
+
+.forgot-section h2, .reset-section h2 {
+    font-size: 1.5rem;
+    color: #1a3eb3; /* Blue Text */
+    margin-bottom: 1rem;
+}
+
+/* Right Side Testimonial */
+.testimonial {
+    color: #ffffff; /* White Text on Blue */
+    text-align: center;
+    max-width: 80%;
+    font-size: 1.2rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.user-info img {
+    width: 60px; /* Profile Image Size */
+    height: 60px;
+    border-radius: 50%; /* Circular Image */
+    margin-right: 15px;
+}
+
+.user-info h2 {
+    font-size: 1rem;
+    color: #ffffff; /* White Text */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+        justify-content: center;
+        background-image: url('https://staticloginsignuppage.s3.amazonaws.com/loginsignupimage.jpg');
+        background-size: cover;
+        background-position: center;
+        height: 100vh;
+    }
+
+    .login-right {
+        width: 100%;
+        flex: none;
+        height: auto;
+        background-color: transparent;
+    }
+
+    .login-left {
+        display: none; 
+    }
+
+    .form-container {
+        max-width: 320px;
+        background-color: rgba(255, 255, 255, 0.9); /* Slight transparency for form background */
+        margin: auto;
+    }
+
+    .testimonial {
+        font-size: 1rem;
+    }
+
+    .user-info img {
+        width: 50px;
+        height: 50px;
+    }
+}
+
+/* Spinner at the center of the page */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Semi-transparent black overlay */
+    z-index: 1000; /* High z-index to ensure it covers everything */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-left-color: #09f;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s ease infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+.success-spinner p {
+    margin-top: 10px;
+    font-size: 1.2rem;
+    color: #09f;
+}

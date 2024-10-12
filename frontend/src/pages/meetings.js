@@ -1,9 +1,9 @@
 import React, { useContext, useEffect, useState } from "react";
 import { Context } from "../store/appContext";
+import '../styles/meetings.css'; // Import the CSS file for table styles
 
 const Meetings = () => {
     const zoomclientid = process.env.REACT_APP_ZOOM_CLIENT_ID;
-    console.log("Zoom Client ID:", zoomclientid);
     const backendurl = process.env.REACT_APP_FLASK_BACKEND_URL;
     const { store, actions } = useContext(Context);
     const [loading, setLoading] = useState(true);
@@ -11,6 +11,15 @@ const Meetings = () => {
     const [selectedMeetingId, setSelectedMeetingId] = useState(null);
     const [errors, setErrors] = useState({});
     const [zoomTokenAvailable, setZoomTokenAvailable] = useState(false);
+
+    if (!store.token) {
+        return (
+          <div>
+            Please log in to view this page.
+            <button onClick={() => navigate('/login')}>Login</button>
+          </div>
+        );
+      }
 
     useEffect(() => {
         const zoomToken = sessionStorage.getItem("zoomtoken");
@@ -69,10 +78,8 @@ const Meetings = () => {
             }
         } catch (error) {
             console.error("Failed to create meeting:", error);
-            
             // Set the error message to show on the frontend
             setErrors({ general: error.message });
-
             // Clear the error message after 5 seconds
             setTimeout(() => {
                 setErrors({ general: null });
@@ -120,80 +127,105 @@ const Meetings = () => {
     };
 
     if (loading) {
-        return <div>Loading...</div>;
+        return (
+            <div className="loading-spinner">
+                <div className="spinner"></div>
+            </div>
+        );
     }
 
     return (
-        <div>
-            <h1>Meetings Page</h1>
+        <div className="meetings-container">
+            <h1 className="meetings-page-title">Meetings Page</h1>
             {store.subscribed ? (
                 <>
-                    <p>You are already subscribed!</p>
+                    <p className="meetings-subscription-status">You are already subscribed!</p>
                     {zoomTokenAvailable ? (
                         <>
-                            <button onClick={handleCreateMeeting}>Create Meeting</button>
-                            {errors.general && <p style={{ color: "red" }}>{errors.general}</p>}
+                            <button className="meetings-action-button" onClick={handleCreateMeeting}>Create Meeting</button>
+                            {errors.general && <p className="error-message">{errors.general}</p>}
                         </>
                     ) : (
-                        <button onClick={handleAuthorizeZoom}>Authorize Zoom</button>
+                        <button className="meetings-action-button" onClick={handleAuthorizeZoom}>Authorize Zoom</button>
                     )}
 
                     {store.allmeetings && store.allmeetings.length > 0 ? (
-                        <ul>
-                            {store.allmeetings.map((meeting) => (
-                                <li key={meeting.meeting_id}>
-                                    <p>Meeting ID: {meeting.meeting_id}</p>
-                                    {meeting.participant_email ? (
-                                        <>
-                                            <p>Participant Email: {meeting.participant_email}</p>
-                                            <p>
-                                                Meeting Link:{" "}
+                        <table className="meetings-table">
+                            <thead>
+                                <tr>
+                                    <th>Meeting ID</th>
+                                    <th>Participant Email</th>
+                                    <th>Meeting Link</th>
+                                    <th>Host URL</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {store.allmeetings.map((meeting) => (
+                                    <tr key={meeting.meeting_id}>
+                                        <td>{meeting.meeting_id}</td>
+                                        <td>
+                                            {meeting.participant_email ? (
+                                                <span>{meeting.participant_email}</span>
+                                            ) : (
+                                                <>
+                                                    <input
+                                                        type="email"
+                                                        value={participantEmails[meeting.meeting_id] || ""}
+                                                        onChange={(event) => handleParticipantEmailChange(meeting.meeting_id, event)}
+                                                        placeholder="Enter participant email"
+                                                        className="meetings-email-input"
+                                                    />
+                                                    {errors[meeting.meeting_id] && (
+                                                        <p className="meetings-error-message">{errors[meeting.meeting_id]}</p>
+                                                    )}
+                                                    <button
+                                                        className="meetings-add-participant-button"
+                                                        onClick={() => {
+                                                            setSelectedMeetingId(meeting.meeting_id);
+                                                            handleSubmitParticipantEmail(meeting.meeting_id);
+                                                        }}
+                                                    >
+                                                        Add Participant
+                                                    </button>
+                                                </>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {meeting.meeting_link ? (
                                                 <a href={meeting.meeting_link} target="_blank" rel="noopener noreferrer">
                                                     {meeting.meeting_link}
                                                 </a>
-                                            </p>
-                                            <p>
-                                                Host URL:{" "}
+                                            ) : (
+                                                <span>N/A</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {meeting.host_url ? (
                                                 <a href={meeting.host_url} target="_blank" rel="noopener noreferrer">
                                                     {meeting.host_url}
                                                 </a>
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <input
-                                                type="email"
-                                                value={participantEmails[meeting.meeting_id] || ""}
-                                                onChange={(event) => handleParticipantEmailChange(meeting.meeting_id, event)}
-                                                placeholder="Enter participant email"
-                                            />
-                                            {errors[meeting.meeting_id] && (
-                                                <p style={{ color: "red" }}>{errors[meeting.meeting_id]}</p>
+                                            ) : (
+                                                <span>N/A</span>
                                             )}
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedMeetingId(meeting.meeting_id);
-                                                    handleSubmitParticipantEmail(meeting.meeting_id);
-                                                }}
-                                            >
-                                                Add Participant
+                                        </td>
+                                        <td>
+                                            <button className="meetings-delete-button" onClick={() => handleDeleteMeeting(meeting.meeting_id)}>
+                                                Delete
                                             </button>
-                                        </>
-                                    )}
-                                    <button onClick={() => handleDeleteMeeting(meeting.meeting_id)}>
-                                        Delete Meeting
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     ) : (
-                        <p>No meetings available.</p>
+                        <p className="meetings-no-meetings">No meetings available.</p>
                     )}
                 </>
             ) : (
                 <>
-                    <p>You are not subscribed. Click below to subscribe:</p>
-                    <button onClick={handleSubscription}>Add Subscription</button>
+                    <p className="subscription-status">You are not subscribed. Click below to subscribe:</p>
+                    <button className="action-button" onClick={handleSubscription}>Add Subscription</button>
                 </>
             )}
         </div>

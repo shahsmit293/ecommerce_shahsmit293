@@ -1,0 +1,143 @@
+/* PhoneCard.css */
+
+/* Phone Card Component Styling */
+.phone-card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Minimum width for each card */
+  gap: 20px; /* Space between phone cards */
+}
+
+.phone-card {
+  background-color: #fff;
+  border-radius: 15px; /* Larger rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow for depth */
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 450px; /* Increased height for the phone card */
+  display: flex; /* Use flexbox for vertical alignment */
+  flex-direction: column; /* Arrange content vertically */
+  justify-content: flex-start; /* Start content at the top */
+  position: relative; /* Make card a positioned container */
+  overflow: hidden; /* Prevent content overflow */
+}
+
+.phone-card:hover {
+  transform: translateY(-5px); /* Subtle hover effect */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); /* Slightly stronger shadow on hover */
+}
+
+.browse-phone-image {
+  width: 100%;
+  height: 160px; /* Height for image */
+  object-fit: cover; /* Maintain aspect ratio */
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.phone-details {
+  flex-grow: 1; /* Take up remaining space in the middle */
+  display: flex; /* Flexbox for vertical alignment */
+  flex-direction: column; /* Arrange details vertically */
+  justify-content: center; /* Center content within details section */
+  align-items: center; /* Center align details horizontally */
+  padding: 10px 0;
+  overflow: hidden; /* Prevent overflow of details section */
+}
+
+.phone-name {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 5px; /* Reduce margin */
+}
+
+.phone-info {
+  font-size: 14px; /* Slightly smaller font for other details */
+  color: #6c757d; /* Lighter color for additional details */
+  margin-bottom: 5px; /* Space between details */
+}
+
+.phone-actions {
+  display: flex;
+  justify-content: space-around; /* Space between buttons */
+  background-color: #f8f9fa; /* Light background color for actions */
+  padding: 10px; /* Padding around action buttons */
+  border-radius: 10px; /* Rounded corners for action section */
+}
+
+.view-button, .chat-button, .favorite-button {
+  background-color: #1a3eb3; /* Purple background for buttons */
+  color: white; /* White text color */
+  border: none;
+  border-radius: 20px; /* Rounded corners */
+  padding: 10px 20px; /* Button padding */
+  font-size: 14px; /* Font size */
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.view-button:hover, .chat-button:hover, .favorite-button:hover {
+  background-color: #563d7c; /* Darker purple on hover */
+  transform: scale(1.05); /* Slightly larger on hover */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+  .phone-card-container {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Reduce min width for each card */
+  }
+  .phone-card {
+    height: 400px; /* Adjust height */
+  }
+}
+
+@media (max-width: 768px) {
+  .phone-card-container {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Smaller cards for tablets */
+    padding: 10px; /* Reduce padding */
+  }
+  .phone-card {
+    height: 350px; /* Adjust height for smaller screens */
+    padding: 8px; /* Reduce padding inside cards */
+  }
+  .browse-phone-image {
+    height: 140px; /* Adjust image height */
+  }
+}
+
+@media (max-width: 480px) {
+  .phone-card-container {
+    grid-template-columns: 1fr; /* Single column layout for mobile */
+    padding: 5px; /* Reduce padding for mobile */
+  }
+  .phone-card {
+    height: 330px; /* Adjust height for mobile */
+    padding: 8px; /* Reduce padding inside cards */
+  }
+  .browse-phone-image {
+    height: 130px; /* Adjust image height for mobile */
+  }
+  .phone-actions {
+    flex-direction: column; /* Stack buttons vertically */
+    gap: 10px; /* Add space between buttons */
+  }
+  .view-button, .chat-button, .favorite-button {
+    width: 100%; /* Full width buttons for mobile */
+  }
+}
+
+.sold-out {
+  position: absolute; /* Position the label */
+  top: 10px; /* Distance from the top */
+  right: 10px; /* Distance from the right */
+  background-color: #ff4d4d; /* Bright red background */
+  color: white; /* White text color */
+  padding: 5px 10px; /* Padding around the text */
+  border-radius: 5px; /* Rounded corners */
+  font-size: 12px; /* Font size for the label */
+  font-weight: bold; /* Bold text */
+  text-transform: uppercase; /* Uppercase text */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow for depth */
+  z-index: 1; /* Ensure the label is above other content */
+}
