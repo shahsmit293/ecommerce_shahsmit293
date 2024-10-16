@@ -128,17 +128,20 @@ def confirm_signup():
     try:
         body = request.json
         email = body.get('email')
+        firstname = body.get('firstname')
+        lastname = body.get('lastname')
+        phonenumber = body.get('phonenumber')
 
         # Validate inputs
-        if not email:
-            return jsonify({"error": "Email is missing"}), 400
+        if not email or not firstname or not lastname or not phonenumber:
+            return jsonify({"error": "Missing required fields"}), 400
 
-        # If successful, continue to insert email into database
-        user = User(email=email)
+        # If successful, insert the user details into the database
+        user = User(email=email, firstname=firstname, lastname=lastname, phonenumber=phonenumber)
         db.session.add(user)
         db.session.commit()
 
-        return jsonify({"message": "Signup confirmed and email added to database"}), 200
+        return jsonify({"message": "Signup confirmed and user added to database"}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -543,11 +546,16 @@ def get_stream_token():
 
     if not activeuserid:
         return jsonify({'error': 'activeuserid is required'}), 400
-
+    user = User.query.get(activeuserid)
+    if not user:
+        return jsonify({"success": False, "error": "User not found"}), 404
+    firstname=User.firstname
+    lastname=User.lastname
+    username = f"{user.firstname} {user.lastname}"
     chat_client = StreamChat(api_key=stream_chat_api_key, api_secret=stream_chat_api_secret)
     token = chat_client.create_token(activeuserid)
 
-    return jsonify({'token': token})
+    return jsonify({'token': token, 'username': username})
 
 @api.route('/check_and_create_channel', methods=['POST'])
 def check_and_create_channel():
@@ -595,7 +603,7 @@ def get_user_id():
 
     user = User.query.filter_by(email=useremail).first()
     if user:
-        return jsonify({"user_id": user.id})
+        return jsonify({"user_id": user.id, "firstname":user.firstname, "lastname":user.lastname})
     else:
         return jsonify({"error": "User not found"}), 404
 

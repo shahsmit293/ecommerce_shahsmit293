@@ -5,13 +5,23 @@ import {
     SignUpCommand, 
     ConfirmSignUpCommand, 
     ForgotPasswordCommand, 
-    ConfirmForgotPasswordCommand 
+    ConfirmForgotPasswordCommand,
+    AdminDeleteUserCommand,
+    ResendConfirmationCodeCommand,
+    ListUsersCommand 
 } from "@aws-sdk/client-cognito-identity-provider";
 import Cookies from 'js-cookie';
 import { StreamChat } from 'stream-chat';
 
 // Initialize Cognito client with environment variable
-const client = new CognitoIdentityProviderClient({ region: process.env.REACT_APP_AWS_REGION });
+const client = new CognitoIdentityProviderClient({
+    region: process.env.REACT_APP_AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.REACT_APP_AWS_ACCESS_KEY,
+        secretAccessKey: process.env.REACT_APP_AWS_SECRET_KEY
+    },
+});
+const userpoolid= process.env.REACT_APP_USER_POOL_ID
 
 const getState = ({ getStore, getActions, setStore }) => {
     let backend = process.env.REACT_APP_FLASK_BACKEND_URL;
@@ -42,7 +52,12 @@ const getState = ({ getStore, getActions, setStore }) => {
             alllistedphones: [],
             subscribed:null,
             allmeetings: [],
-            meetingserror:null
+            meetingserror:null,
+            firstname: null,
+            lastname: null,
+            phonenumber: null,
+            activeuserfirstname: null,
+            activeuserlastname: null
         },
         actions: {
             // In flux.js or wherever your actions are defined
@@ -123,7 +138,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                     }
 
                     const data = await response.json();
-                    setStore({ activeuserid: data.user_id });
+                    setStore({ activeuserid: data.user_id, activeuserfirstname: data.firstname, activeuserlastname: data.lastname });
                     return data.user_id; // Return the user ID to be used in the next step
                 } catch (error) {
                     console.error("Error fetching user ID:", error);
@@ -142,29 +157,108 @@ const getState = ({ getStore, getActions, setStore }) => {
                     setStore({ user, token: accessToken });
                 }
             },
-            signup: async (email, password) => {
+
+            checkIfUserExists: async (email) => {
                 try {
-                    const command = new SignUpCommand({
+                    const command = new ListUsersCommand({
+                        UserPoolId: userpoolid,  // Replace with your User Pool ID
+                        Filter: `email = "${email}"`,  // Filter users by email
+                        Limit: 1,  // We only need to check if one user exists
+                    });
+                    
+                    const response = await client.send(command);
+                    console.log('ListUsers response:', response);
+            
+                    // If there are no users in the response, the user does not exist
+                    if (response.Users.length === 0) {
+                        return false;  // User doesn't exist
+                    }
+            
+                    const user = response.Users[0];  // The first (and only) user
+        
+                    // Extract family_name, given_name, and phone_number from the user's attributes
+                    const attributes = user.Attributes.reduce((acc, attr) => {
+                        acc[attr.Name] = attr.Value;
+                        return acc;
+                    }, {});
+
+                    const userDetails = {
+                        email: attributes.email || '',
+                        family_name: attributes.family_name,
+                        given_name: attributes.given_name,
+                        phone_number: attributes.phone_number
+                    };
+
+                    setStore({
+                        firstname: userDetails.given_name,
+                        lastname: userDetails.family_name,
+                        phonenumber: userDetails.phone_number,
+                    });
+                    return userDetails;
+                } catch (err) {
+                    console.error('Error checking user existence:', err);
+                    throw err;
+                }
+            },
+            
+            resendVerificationCode: async (email) => {
+                try {
+                    const command = new ResendConfirmationCodeCommand({
                         ClientId: clientId,
                         Username: email,
-                        Password: password,
-                        UserAttributes: [{ Name: 'email', Value: email }]
                     });
-            
                     const response = await client.send(command);
-                    console.log('Signup Successful:', response);
-                    // Return true on success
+                    console.log('Verification code resent:', response);
                     return true;
                 } catch (err) {
-                    setStore({ signuperror: err.message });
-                    console.error('Signup Error:', err);
-                    // Return error message to handle in the UI
+                    console.error('Error resending verification code:', err);
                     return err.message;
                 }
             },
             
-
-            confirmSignup: async (email, verificationCode) => {
+            
+            signup: async (email, password, firstname, lastname, phonenumber) => {
+                try {
+                    // First, check if the user already exists in the Cognito User Pool
+                    const userExists = await getActions().checkIfUserExists(email);
+            
+                    if (userExists) {
+                        if (!userExists.UserStatus || userExists.UserStatus === 'UNCONFIRMED') {
+                            // User exists but has not confirmed their account
+                            await getActions().resendVerificationCode(email);
+                            return 'unverified';  // Indicate that the user is unverified
+                        } else {
+                            // User exists and is confirmed
+                            return 'verified';  // Indicate that the user is verified
+                        }
+                    }
+            
+                    // Proceed with new signup if the user doesn't exist
+                    const command = new SignUpCommand({
+                        ClientId: clientId,
+                        Username: email,
+                        Password: password,
+                        UserAttributes: [
+                            { Name: 'email', Value: email },
+                            { Name: 'phone_number', Value: phonenumber },
+                            { Name: 'given_name', Value: firstname }, 
+                            { Name: 'family_name', Value: lastname },
+                        ],
+                    });
+            
+                    const response = await client.send(command);
+                    console.log('Signup Successful:', response);
+                    return true;
+                } catch (err) {
+                    setStore({ signuperror: err.message });
+                    console.error('Signup Error:', err);
+                    return err.message;
+                }
+            },
+            
+            
+            
+            confirmSignup: async (email, verificationCode,firstname, lastname, phonenumber) => {
                 try {
                     const command = new ConfirmSignUpCommand({
                         ClientId: clientId,
@@ -175,8 +269,8 @@ const getState = ({ getStore, getActions, setStore }) => {
                     const response = await client.send(command);
                     console.log("Signup confirmed:", response);
             
-                    // Only call insertEmailToDatabase if there were no errors
-                    await getActions().insertEmailToDatabase(email);
+                    // Only call insertUserToDatabase if there were no errors
+                    await getActions().insertUserToDatabase(email,firstname, lastname, phonenumber);
             
                     // Return success
                     return true;
@@ -186,27 +280,42 @@ const getState = ({ getStore, getActions, setStore }) => {
                 }
             },
 
-            insertEmailToDatabase: async (email) => {
+            insertUserToDatabase: async (email, firstname, lastname, phonenumber) => {
                 try {
                     const response = await fetch(`${backend}confirm_signup`, {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json"
                         },
-                        body: JSON.stringify({ email })
+                        body: JSON.stringify({ email, firstname: firstname, lastname: lastname, phonenumber: phonenumber })
                     });
-
+            
                     if (!response.ok) {
                         const errorData = await response.json();
-                        throw new Error(errorData.error || "Error adding email to database");
+                        throw new Error(errorData.error || "Error adding user to database");
                     }
-
+            
                     const data = await response.json();
-                    console.log("Email added to database:", data);
+                    console.log("User added to database:", data);
                     return data;
                 } catch (error) {
-                    console.error("Error adding email to database:", error);
+                    console.error("Error adding user to database:", error);
                     throw error;
+                }
+            },
+            
+            deleteUserFromCognito: async (email) => {
+                try {
+                    const command = new AdminDeleteUserCommand({
+                        UserPoolId: userpoolid,  // Your Cognito User Pool ID
+                        Username: email
+                    });
+                    const response = await client.send(command);
+                    console.log('User deleted from Cognito:', response);
+                    return true;
+                } catch (err) {
+                    console.error('Error deleting user from Cognito:', err);
+                    return err.message;
                 }
             },
 
@@ -428,7 +537,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                   }
               
                   const data = await response.json();
-                  console.log('Token payload:', data.token);
+                  console.log('Token payload:', data.token, 'Username:', data.username);
               
                   const chatClient = getStore().chatClient || StreamChat.getInstance(apiKey);
               
@@ -438,17 +547,16 @@ const getState = ({ getStore, getActions, setStore }) => {
                   } else {
                     console.log('User not connected or different user. Connecting...');
               
-                    // Connect the user with the retrieved token
                     await chatClient.connectUser(
-                      { id: String(activeuserid) },
-                      data.token
-                    );
+                        { id: String(activeuserid), name: data.username },
+                        data.token
+                      );
               
                     console.log('User connected to chat client:', chatClient);
                   }
               
                   // Update the store with the new streamToken and chatClient
-                  setStore({ streamToken: data.token, chatClient });
+                  setStore({ streamToken: data.token, chatClient, username: data.username });
               
                 } catch (error) {
                   console.error('Error fetching Stream token:', error);
@@ -471,7 +579,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                     }
         
                     const data = await response.json();
-                    setStore({ channelId: data.channel_id, channel : data.channel });
+                    setStore({ channelId: data.channel_id, channel : data.channel,  targetUsername: data.targetUsername});
                 } catch (error) {
                     console.error('Error checking and creating channel:', error);
                 }
@@ -492,7 +600,7 @@ const getState = ({ getStore, getActions, setStore }) => {
                     }
             
                     const data = await response.json();
-                    setStore({ channelslist: data.channels });
+                    setStore({ channelslist: data.channels, usernames: data.usernames });
                 } catch (error) {
                     console.error('Error fetching channels:', error);
                 }

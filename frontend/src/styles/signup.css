@@ -85,7 +85,7 @@ body {
 }
 
 /* Buttons */
-.signup-button, .verify-btn {
+.signup-button, .verify-btn, .resend-btn {
     width: 100%;
     padding: 12px;
     background-color: #1a3eb3; /* Blue Background */
@@ -98,7 +98,7 @@ body {
     transition: background-color 0.3s ease;
 }
 
-.signup-button:hover, .verify-btn:hover {
+.signup-button:hover, .verify-btn:hover, .resend-btn:hover {
     background-color: #142c8b; /* Darker Blue on Hover */
 }
 

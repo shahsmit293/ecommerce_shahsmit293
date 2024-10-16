@@ -9,14 +9,23 @@ class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), nullable=False, unique=True)  # Add unique constraint
+    firstname = db.Column(db.String(50), nullable=True)
+    lastname = db.Column(db.String(50), nullable=True)
+    phonenumber = db.Column(db.String(20), nullable=True)
 
-    def __init__(self, email):
+    def __init__(self, email,firstname,lastname,phonenumber):
         self.email = email
-
+        self.firstname = firstname
+        self.lastname = lastname
+        self.phonenumber = phonenumber
+        
     def serialize(self):
         return {
             "id": self.id,
             "name": self.email,
+            "firstname": self.firstname,
+            "lastname": self.lastname,
+            "phonenumber": self.phonenumber
         }
 
 class Phones(db.Model):
@@ -31,7 +40,7 @@ class Phones(db.Model):
     condition = db.Column(db.String(50), nullable=True)
     seller = db.Column(db.String(120), nullable=True)
     location = db.Column(db.String(120), nullable=True)
-    IMEI = db.Column(db.Integer, nullable=True)
+    IMEI = db.Column(db.String(20), nullable=True)
     user_email = db.Column(db.String(120), db.ForeignKey('user.email'), nullable=True)  
     image_url = db.Column(ARRAY(db.String), nullable=True)
     paypal_email = db.Column(db.String(120), nullable=True)
